@@ -1,0 +1,5 @@
+PyJWT>=2.8.0
+PyYAML>=6.0    # optional: only needed for Policy.from_yaml()
+
+# Optional: real MCP SDK integration smoke test (requires Python >= 3.10)
+# mcp>=1.0

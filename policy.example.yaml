@@ -1,0 +1,10 @@
+# AgentTrust policy — per-agent tool allow-lists (deny-by-default).
+issuer: agenttrust-local
+default_ttl_seconds: 300        # tokens are short-lived by design
+
+agents:
+  support-agent:
+    scopes: ["crm.read", "kb.search", "ticket.*"]   # glob scopes
+    ttl_seconds: 180
+  billing-agent:
+    scopes: ["invoice.read", "payment.read"]        # note: read-only, no refund/write
