@@ -16,16 +16,19 @@ You should be up and running in under an afternoon. This guide walks through the
 ## Step 1 — Install
 
 ```bash
-pip install agenttrust
+git clone https://github.com/ravionxgroup/agenttrust.git
+cd agenttrust
+python -m pip install --upgrade pip
+python -m pip install -e .
 
 # If you load policy from YAML:
-pip install "agenttrust[yaml]"
+python -m pip install -e ".[yaml]"
 
 # If you use LangChain:
-pip install "agenttrust[langchain]"
+python -m pip install -e ".[langchain]"
 
 # If you use MCP (requires Python >= 3.10):
-pip install "agenttrust[mcp]"
+python -m pip install -e ".[mcp]"
 ```
 
 ---
