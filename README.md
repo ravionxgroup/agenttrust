@@ -210,6 +210,7 @@ agenttrust audit --raw
 - **Redaction floor.** Redaction is key-name based and truncates long strings; it is not comprehensive PII detection.
 
 See [Threat Model & Trust Boundary](docs/threat-model.md) for the detailed SDK-level security boundary.
+Selected verified behavior is documented in [Verified Runtime Evidence](docs/evidence/README.md).
 
 ## Development And Validation
 
