@@ -230,6 +230,7 @@ Run example smoke tests:
 ```bash
 python examples/demo.py
 python examples/mcp_demo.py
+python examples/mcp_authorization_evidence.py
 ```
 
 The test suite validates token issuance and verification, expiry handling, fail-closed policy behavior, scope enforcement, wildcard scopes, audit allow/deny/error behavior, argument redaction, MCP adapter behavior, LangChain adapter behavior when `langchain-core` is installed, async paths, malformed policy handling, and concurrent audit writes/runs.

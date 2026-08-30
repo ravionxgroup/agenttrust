@@ -152,6 +152,65 @@ class GuardedMCPClientTest(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(events[0]["decision"], "allow")
             self.assertEqual(events[0]["required_scope"], "crm.read")
 
+    async def test_allowed_then_denied_mcp_call_preserves_deny_before_execute_evidence(self):
+        policy = Policy.from_dict({
+            "issuer": "agenttrust-local",
+            "default_ttl_seconds": 300,
+            "agents": {
+                "ops-reader": {"scopes": ["service.read"]},
+            },
+        })
+
+        class EvidenceClient:
+            def __init__(self):
+                self.calls = []
+
+            async def list_tools(self):
+                return {
+                    "tools": [
+                        {"name": "service.read", "_meta": {"agenttrust/scope": "service.read"}},
+                        {"name": "service.restart", "_meta": {"agenttrust/scope": "service.restart"}},
+                    ]
+                }
+
+            async def call_tool(self, name, arguments=None, **kwargs):
+                self.calls.append((name, arguments or {}, kwargs))
+                return {"tool": name, "status": "ok"}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            audit_path = os.path.join(tmp, "audit.jsonl")
+            at = AgentTrust(
+                policy=policy,
+                secret="dev-secret-change-me-32-byte-key",
+                audit_path=audit_path,
+            )
+            run = at.start_run("ops-reader")
+            client = EvidenceClient()
+            mcp = wrap_mcp_client(run, client, default_to_tool_name=False)
+            await mcp.load_tool_scopes()
+
+            result = await mcp.call_tool("service.read", {"service_id": "svc-synthetic-001"})
+
+            with self.assertRaises(ToolDenied):
+                await mcp.call_tool("service.restart", {"service_id": "svc-synthetic-001"})
+
+            self.assertEqual(result["tool"], "service.read")
+            self.assertEqual(
+                client.calls,
+                [("service.read", {"service_id": "svc-synthetic-001"}, {})],
+            )
+
+            events = at.audit.read_all()
+            self.assertEqual(len(events), 2)
+            self.assertEqual(events[0]["decision"], "allow")
+            self.assertEqual(events[0]["tool"], "service.read")
+            self.assertEqual(events[0]["required_scope"], "service.read")
+            self.assertEqual(events[0]["result_status"], "ok")
+            self.assertEqual(events[1]["decision"], "deny")
+            self.assertEqual(events[1]["tool"], "service.restart")
+            self.assertEqual(events[1]["required_scope"], "service.restart")
+            self.assertIsNone(events[1]["result_status"])
+
 
 if __name__ == "__main__":
     unittest.main()
