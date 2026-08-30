@@ -209,6 +209,8 @@ agenttrust audit --raw
 - **Local audit.** JSONL audit is append-only by convention, not tamper-proof storage.
 - **Redaction floor.** Redaction is key-name based and truncates long strings; it is not comprehensive PII detection.
 
+See [Threat Model & Trust Boundary](docs/threat-model.md) for the detailed SDK-level security boundary.
+
 ## Development And Validation
 
 Install development dependencies:
