@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #08111f;
+  color: #e5edf7;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.3);
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: #2dd4bf;
+}
+
+@layer components {
+  .ui-page-title {
+    @apply text-2xl font-semibold tracking-normal text-white;
+  }
+
+  .ui-section-title {
+    @apply text-base font-semibold tracking-normal text-white;
+  }
+
+  .ui-body {
+    @apply text-sm leading-6 text-slate-300;
+  }
+
+  .ui-muted {
+    @apply text-sm leading-5 text-slate-400;
+  }
+
+  .ui-table-header {
+    @apply bg-white/[0.03] text-xs font-medium uppercase tracking-wider text-slate-500;
+  }
+
+  .ui-metric-value {
+    @apply text-3xl font-semibold tracking-normal text-white;
+  }
+
+  .ui-tech-id {
+    @apply inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs tracking-normal text-slate-300;
+  }
+
+  .ui-card {
+    @apply rounded-lg border border-line bg-panel;
+  }
+
+  .ui-card-pad {
+    @apply p-5;
+  }
+
+  .ui-clickable-id {
+    @apply rounded border border-transparent bg-white/[0.03] px-1.5 py-0.5 text-teal-100 transition;
+  }
+
+  .ui-row-selected {
+    @apply bg-teal-400/[0.08] shadow-[inset_3px_0_0_rgba(45,212,191,0.72)];
+  }
+}
