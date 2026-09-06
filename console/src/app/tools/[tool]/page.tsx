@@ -8,9 +8,9 @@ import { RecentEventsTable } from "../../../components/tables/recent-events-tabl
 import { SectionCard } from "../../../components/layout/section-card";
 import { TechId } from "../../../components/badges/tech-id";
 
-export default async function ToolDetailPage({ params }: { params: Promise<{ toolName: string }> }) {
-  const { toolName } = await params;
-  const decodedToolName = decodeURIComponent(toolName);
+export default async function ToolDetailPage({ params }: { params: Promise<{ tool: string }> }) {
+  const { tool: toolParam } = await params;
+  const decodedToolName = decodeURIComponent(toolParam);
   const provider = await getConsoleDataProvider();
   const tool = await provider.getTool(decodedToolName);
   const source = provider.getSourceInfo();
