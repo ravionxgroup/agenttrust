@@ -2,103 +2,249 @@
 
 [![CI](https://github.com/ravionxgroup/agenttrust/actions/workflows/ci.yml/badge.svg)](https://github.com/ravionxgroup/agenttrust/actions/workflows/ci.yml)
 
-Least-privilege identity + audit for AI agents.
+Least-privilege identity, scoped authorization, and audit visibility for AI agent tool calls.
 
-Every agent run gets a short-lived, scoped JWT identity. Every tool call is authorized against that identity and written to a local audit log before the tool executes. Unknown agents and out-of-scope calls are denied by default.
+AgentTrust is an SDK-first security layer for cooperative first-party agent code. Each agent run receives a short-lived, scoped identity. Every guarded tool call is authorized before execution, denied by default when scope is missing, and recorded to a local JSONL audit trail. The Security Console provides read-only visibility into that audit and policy data.
 
-> **MVP scope.** AgentTrust is currently an SDK-first milestone: soft in-process enforcement plus local audit for cooperative first-party code. Non-cooperative or adversarial code can bypass in-process guards. Hard enforcement requires the future gateway and managed control plane. Treat the SDK as a visibility and least-privilege layer today, not as a hard security boundary.
+> **Current boundary.** AgentTrust currently enforces in-process through the Python SDK. It is useful for least-privilege discipline, auditability, and integration evidence, but it is not a hard security gateway. Non-cooperative or adversarial code running outside the SDK can bypass these guards.
 
 ## Why AgentTrust
 
-Agent frameworks make it easy to wire broad tool access into autonomous workflows. AgentTrust keeps the first milestone intentionally narrow:
+Agent frameworks make it easy to give autonomous workflows broad, long-lived tool access. AgentTrust narrows that surface:
 
-- per-run identity instead of long-lived agent-level authority
-- short-lived HS256 JWTs with scoped claims
-- deny-by-default policy evaluation
-- audit-before-execution for both allow and deny decisions
-- thin LangChain and MCP adapters isolated from the core identity, policy, and audit modules
+- short-lived per-run agent identity instead of broad ambient authority
+- scoped authorization for each protected tool call
+- deny-by-default policy behavior for unknown agents and missing scopes
+- authorization before tool execution
+- audit events for allowed calls, denied calls, and execution errors
+- MCP and LangChain integrations without coupling them to the core SDK
+- a read-only Security Console for local visibility
 
-## Install
+## How It Works
 
-The public PyPI name `agenttrust` is not currently evidenced as this RavionX repository's distribution. Install this project from source:
+Conceptual flow:
+
+```text
+AI Agent / Framework
+  -> AgentTrust SDK
+  -> Run Identity
+  -> Policy Authorization
+  -> Protected Tool
+  -> Audit Event
+  -> Security Console
+```
+
+Security behavior:
+
+```text
+Agent requests tool
+  -> required scope evaluated
+  -> ALLOW
+  -> execute tool
+  -> audit result
+```
+
+```text
+Agent requests tool
+  -> required scope evaluated
+  -> DENY
+  -> tool is NOT executed
+  -> audit denial
+```
+
+## Core Capabilities
+
+- **Per-run identity:** `start_run()` issues a short-lived JWT identity with `agent_id`, `run_id`, scopes, issuer, timestamps, and `token_id`.
+- **Scoped authorization:** each guarded call declares the required scope for that tool operation.
+- **Deny by default:** unknown agents and out-of-scope calls fail closed.
+- **Authorize before execution:** denied calls do not invoke the wrapped tool.
+- **Audit trail:** each call attempt writes an audit event with decision, reason, redacted arguments, and execution result when applicable.
+- **MCP integration:** MCP client/session wrappers authorize MCP tool calls with explicit or metadata-provided scopes.
+- **LangChain integration:** helpers expose guarded callables as LangChain tools.
+- **Security Console:** a self-contained Next.js console renders read-only audit and policy visibility.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    Agent["AI Agent / Framework"] --> SDK["AgentTrust SDK"]
+    SDK --> Identity["Run Identity"]
+    SDK --> Policy["Policy Authorization"]
+    Policy -->|ALLOW| Tool["Protected Tool"]
+    Policy -->|DENY| Denial["Tool Not Executed"]
+    Tool --> Audit["Audit Event"]
+    Denial --> Audit
+    Audit --> Console["Security Console"]
+    SDK --> LangChain["LangChain Adapter"]
+    SDK --> MCP["MCP Adapter"]
+```
+
+Core modules:
+
+- `agenttrust/identity.py`: token issuance and verification
+- `agenttrust/policy.py`: declarative deny-by-default scope policy
+- `agenttrust/audit.py`: JSONL audit events and argument redaction
+- `agenttrust/langchain.py`: LangChain adapter
+- `agenttrust/mcp.py`: MCP client/session adapter
+- `console/`: read-only Security Console
+
+## Security Console
+
+The AgentTrust Security Console is a local, read-only Next.js application in [console/](console/). It provides visibility into:
+
+- Overview
+- Agents
+- Runs
+- Audit Explorer
+- Tools
+- Declared Policies
+
+The Console separates data sources deliberately:
+
+- **Observed data:** Agents, Runs, Audit, and Tools are reconstructed from audit events.
+- **Declared data:** Policies are loaded from AgentTrust policy YAML or demo policy fixtures.
+
+The Console does not participate in authorization, does not edit policy, and does not expand the SDK's enforcement boundary. Enforcement remains in the in-process AgentTrust SDK.
+
+### Screenshots
+
+No screenshot files are currently present in the repository, so this README intentionally does not include image links yet.
+
+Recommended screenshot location:
+
+```text
+docs/assets/screenshots/
+```
+
+Recommended files to add:
+
+1. `console-run-detail-denied-not-executed.png`: Run Detail showing `restart_service` / `service.restart` denied with `scope not granted` and `NOT EXECUTED`.
+2. `console-overview.png`: Overview showing metrics, recent authorization activity, denied tools, authorization summary, and data source indicator.
+3. `console-audit-explorer.png`: optional Audit Explorer screenshot if a third image helps reviewers understand event inspection.
+
+## Quick Start
+
+### Python SDK
+
+Install from source:
 
 ```bash
 git clone https://github.com/ravionxgroup/agenttrust.git
 cd agenttrust
-python -m pip install --upgrade pip
-python -m pip install -e .
+python3 -m pip install --upgrade pip
+python3 -m pip install -e .
+```
+
+Install development dependencies:
+
+```bash
+python3 -m pip install -e ".[dev]"
 ```
 
 Optional extras:
 
 ```bash
-python -m pip install -e ".[yaml]"      # Policy.from_yaml()
-python -m pip install -e ".[langchain]" # LangChain adapter
-python -m pip install -e ".[mcp]"       # MCP adapter (Python >= 3.10)
-python -m pip install -e ".[all]"       # YAML + LangChain
+python3 -m pip install -e ".[yaml]"
+python3 -m pip install -e ".[langchain]"
+python3 -m pip install -e ".[mcp]"
+python3 -m pip install -e ".[all]"
 ```
 
-For local development and tests:
+Run tests:
 
 ```bash
-python -m pip install -e ".[dev]"
+python3 -m pytest
 ```
 
-## Quickstart
+Run examples:
 
-### 1. Define a policy
-
-```yaml
-# policy.yaml
-issuer: my-org
-default_ttl_seconds: 300
-agents:
-  support-agent:
-    scopes: ["crm.read", "kb.search", "ticket.*"]
-  billing-agent:
-    scopes: ["invoice.read", "payment.read"]
+```bash
+python3 examples/demo.py
+python3 examples/mcp_demo.py
+python3 examples/mcp_authorization_evidence.py
+python3 examples/langchain_demo.py
 ```
 
-### 2. Wrap tool calls
+### Basic SDK Usage
 
 ```python
 from agenttrust import AgentTrust, ToolDenied
 from agenttrust.policy import Policy
 
 at = AgentTrust(
-    policy=Policy.from_yaml("policy.yaml"),
+    policy=Policy.from_yaml("policy.example.yaml"),
     secret="your-32-char-secret-key-here!!!",
 )
 
 with at.start_run("support-agent") as run:
-    result = run.call("crm.read", get_customer, customer_id=42)  # allowed + audited
+    result = run.call("crm.read", get_customer, customer_id=42)
 
     try:
-        run.call("payment.refund", do_refund, amount=500)        # denied + audited
+        run.call("payment.refund", do_refund, amount=500)
     except ToolDenied:
         pass
 ```
 
-## Usage Patterns
+### Security Console
 
-Direct calls:
+Install and run the Console:
 
-```python
-with at.start_run("support-agent") as run:
-    result = run.call("crm.read", get_customer, customer_id=42)
+```bash
+cd console
+npm install
+npm run dev
 ```
 
-Decorator:
+By default, the Console uses demo audit and policy fixtures.
 
-```python
-run = at.start_run("support-agent")
+Use a local audit file:
 
-@run.guarded("crm.read")
-def get_customer(customer_id: int) -> dict:
-    ...
-
-result = get_customer(customer_id=42)
+```bash
+AGENTTRUST_AUDIT_PATH=../agenttrust_audit.jsonl npm run dev
 ```
+
+Use a local policy file:
+
+```bash
+AGENTTRUST_POLICY_PATH=../policy.example.yaml npm run dev
+```
+
+Use both:
+
+```bash
+AGENTTRUST_AUDIT_PATH=../agenttrust_audit.jsonl \
+AGENTTRUST_POLICY_PATH=../policy.example.yaml \
+npm run dev
+```
+
+Build the Console:
+
+```bash
+npm run build
+```
+
+## Audit Events
+
+Every guarded tool call attempt writes one JSON line to `agenttrust_audit.jsonl` by default:
+
+```json
+{"event_id":"evt_...","ts":1234567890.1,"agent_id":"support-agent","run_id":"run_abc","token_id":"tok_xyz","tool":"get_customer","required_scope":"crm.read","decision":"allow","reason":null,"args_redacted":{"customer_id":42},"result_status":"ok"}
+{"event_id":"evt_...","ts":1234567890.2,"agent_id":"support-agent","run_id":"run_abc","token_id":"tok_xyz","tool":"do_refund","required_scope":"payment.refund","decision":"deny","reason":"scope not granted","args_redacted":{"amount":500},"result_status":null}
+```
+
+Sensitive argument keys such as `password`, `token`, `api_key`, `access_token`, and `client_secret` are redacted before logging. Redaction is key-based and may not remove all sensitive operational context.
+
+View the audit log:
+
+```bash
+agenttrust audit
+agenttrust audit --last 20
+agenttrust audit --decision deny
+agenttrust audit --agent support-agent
+agenttrust audit --raw
+```
+
+## Integrations
 
 LangChain:
 
@@ -130,141 +276,42 @@ MCP tools can also declare required scopes in metadata:
 
 ```python
 @server.tool(meta={"agenttrust/scope": "crm.read"})
-def get_customer(customer_id: int) -> dict: ...
+def get_customer(customer_id: int) -> dict:
+    ...
 ```
 
-## Architecture
+## Boundaries And Limitations
 
-```mermaid
-flowchart TD
-    Agent["Agent / Agent Framework"] --> SDK["AgentTrust SDK"]
-    SDK --> Identity["Per-run Identity"]
-    SDK --> Policy["Policy / Scope Authorization"]
-    SDK --> Audit["Audit"]
-    SDK --> Adapters["Framework Adapters"]
-    Adapters --> LangChain["LangChain"]
-    Adapters --> MCP["MCP"]
-    LangChain --> Tool["Tool Call"]
-    MCP --> Tool
-```
+- Current enforcement is in-process SDK enforcement.
+- The Console is read-only and has no authentication or RBAC.
+- Local JSONL audit is append-only-style by convention, not immutable or tamper-proof storage.
+- AgentTrust does not currently provide a hard security gateway, managed control plane, centralized policy service, distributed enforcement system, production SaaS, or security findings/risk engine.
+- Tokens currently use HS256 shared-secret signing. Asymmetric signing and key rotation are future work.
+- Run timing in the Console uses first and last observed audit events, not explicit run lifecycle records.
 
-Execution flow:
-
-```text
-start_run(agent)
-      |
-      v
-short-lived scoped JWT
-      |
-      v
-tool invocation requested
-      |
-      v
-authorize required scope
-      |
-   allow / deny
-      |
-      v
-audit decision
-      |
-      v
-execute tool only if allowed
-```
-
-Core modules stay independent of framework adapters:
-
-- `agenttrust/identity.py`: token issuance and verification
-- `agenttrust/policy.py`: declarative deny-by-default scope policy
-- `agenttrust/audit.py`: JSONL audit events and argument redaction
-- `agenttrust/langchain.py`: LangChain adapter
-- `agenttrust/mcp.py`: MCP client/session adapter
-
-## Audit
-
-Every tool call attempt writes one JSON line to `agenttrust_audit.jsonl` by default:
-
-```json
-{"event_id":"evt_...","ts":1234567890.1,"agent_id":"support-agent","run_id":"run_abc","token_id":"tok_xyz","tool":"get_customer","required_scope":"crm.read","decision":"allow","reason":null,"args_redacted":{"customer_id":42},"result_status":"ok"}
-{"event_id":"evt_...","ts":1234567890.2,"agent_id":"support-agent","run_id":"run_abc","token_id":"tok_xyz","tool":"do_refund","required_scope":"payment.refund","decision":"deny","reason":"scope not granted","args_redacted":{"amount":500},"result_status":null}
-```
-
-Sensitive argument keys such as `password`, `token`, `api_key`, `access_token`, and `client_secret` are redacted before logging.
-
-View the audit log:
-
-```bash
-agenttrust audit
-agenttrust audit --last 20
-agenttrust audit --decision deny
-agenttrust audit --agent support-agent
-agenttrust audit --raw
-```
-
-## Security Properties And Limitations
-
-- **Soft enforcement today.** The SDK guards cooperative first-party code in-process. Non-cooperative or adversarial code can bypass the SDK.
-- **Future hard boundary.** Hard enforcement requires the planned gateway so tool traffic can be mediated outside agent code.
-- **Deny-by-default.** Unknown agents have no scopes. Bad tokens fail closed. Missing MCP scope mappings can be configured to fail closed.
-- **MVP signing.** Tokens use HS256 with a shared secret. Asymmetric RS256/EdDSA signing is future work.
-- **Local audit.** JSONL audit is append-only by convention, not tamper-proof storage.
-- **Redaction floor.** Redaction is key-name based and truncates long strings; it is not comprehensive PII detection.
-
-See [Threat Model & Trust Boundary](docs/threat-model.md) for the detailed SDK-level security boundary.
-Selected verified behavior is documented in [Verified Runtime Evidence](docs/evidence/README.md).
-
-## Development And Validation
-
-Install development dependencies:
-
-```bash
-python -m pip install -e ".[dev]"
-```
-
-Run tests:
-
-```bash
-python -m pytest
-```
-
-Run example smoke tests:
-
-```bash
-python examples/demo.py
-python examples/mcp_demo.py
-python examples/mcp_authorization_evidence.py
-```
-
-The test suite validates token issuance and verification, expiry handling, fail-closed policy behavior, scope enforcement, wildcard scopes, audit allow/deny/error behavior, argument redaction, MCP adapter behavior, LangChain adapter behavior when `langchain-core` is installed, async paths, malformed policy handling, and concurrent audit writes/runs.
-
-No lint or typecheck command is currently configured in `pyproject.toml`.
-
-## Repository Structure
+## Repository Navigation
 
 | Path | Purpose |
 |---|---|
-| `agenttrust/` | Python SDK package |
-| `tests/` | Unit and adapter tests |
-| `examples/` | Concise runnable examples |
-| `docs/onboarding.md` | Evaluation and integration walkthrough |
-| `docs/feedback.md` | Structured evaluator feedback prompts |
-| `docs/archive/` | Historical build-plan material |
-| `policy.example.yaml` | Example deny-by-default policy |
+| [agenttrust/](agenttrust/) | Python SDK package |
+| [examples/](examples/) | Runnable SDK, MCP, and LangChain examples |
+| [tests/](tests/) | Unit and adapter tests |
+| [console/](console/) | Read-only AgentTrust Security Console |
+| [policy.example.yaml](policy.example.yaml) | Example deny-by-default policy |
+| [docs/onboarding.md](docs/onboarding.md) | Evaluation and integration walkthrough |
+| [docs/threat-model.md](docs/threat-model.md) | Trust boundary and threat model |
+| [docs/evidence/README.md](docs/evidence/README.md) | Verified runtime evidence index |
+| [docs/feedback.md](docs/feedback.md) | Structured evaluator feedback prompts |
+| [SECURITY.md](SECURITY.md) | Security policy |
 
 ## Roadmap
 
-Future work remains intentionally out of this SDK-first milestone:
+Future work remains intentionally outside this SDK-first milestone:
 
 - gateway or sidecar enforcement
 - asymmetric signing and key rotation
 - centralized audit storage and SIEM export
 - managed policy/control plane
-- SSO, PKI, dashboards, and anomaly detection
-
-## Maintainer
-
-AgentTrust is a RavionX open-source engineering project maintained by Ravinder Varkali.
-
-GitHub: https://github.com/rvarkali
 
 ## License And Security
 
