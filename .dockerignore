@@ -1,0 +1,14 @@
+**
+!pyproject.toml
+!README.md
+!requirements-container.txt
+!agenttrust/
+!agenttrust/**
+!examples/
+!examples/container_demo.py
+!examples/container_probe.py
+**/__pycache__/
+**/*.pem
+**/*.key
+**/*.jwt
+**/.env*
