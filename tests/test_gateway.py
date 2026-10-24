@@ -13,7 +13,7 @@ from agenttrust.gateway import (
     GatewayAuthenticationError, GatewayAuthorizationDenied, GatewayInvalidRequest,
     GatewayOverloaded, GatewayUnavailable, GatewayExecutionFailed, GatewayOutcomeUnknown,
     GatewayTimeout, GatewayMalformedResponse, GatewayResponseTooLarge,
-    GatewayRedirectRejected, GatewayCancelled,
+    GatewayRedirectRejected, GatewayCancelled, GatewayMCPApplicationError,
 )
 from agenttrust.identity import Issuer
 
@@ -50,11 +50,21 @@ class Stream(httpx.SyncByteStream, httpx.AsyncByteStream):
         self.closed = True
 
 
-def reply(request, status=200, data=None, body=None, headers=None, error=None):
+def reply(request, status=200, data=None, body=None, headers=None, error=None, kind="mcp_result"):
     body = json.dumps({"ok": True} if data is None else data).encode() if body is None else body
     stream = Stream(body, error)
+    error_envelope = type(data) is dict and set(data) == {"request_id", "code", "message"}
+    origin = "gateway_error" if error_envelope else kind
+    execution = "SUCCEEDED" if 200 <= status < 300 else "FAILED"
+    authorization = "ALLOW"
+    if error_envelope:
+        execution = "NOT_EXECUTED" if data["code"] in ("UNAUTHENTICATED", "ACCESS_DENIED", "INVALID_REQUEST", "UNKNOWN_TOOL", "GATEWAY_OVERLOADED") else "UNKNOWN"
+        if data["code"] in ("ACCESS_DENIED", "UNKNOWN_TOOL"): authorization = "DENY"
+        if data["code"] == "UNAUTHENTICATED": authorization = "UNKNOWN"
     response = httpx.Response(status, headers={"Content-Type": "application/json",
-        "X-Request-ID": request.headers["X-Request-ID"], "X-Invocation-ID": INVOCATION, **(headers or {})},
+        "X-Request-ID": request.headers["X-Request-ID"], "X-Invocation-ID": INVOCATION,
+        "X-AgentTrust-Version": "1", "X-AgentTrust-Response-Kind": origin,
+        "X-AgentTrust-Execution": execution, "X-AgentTrust-Authorization": authorization, **(headers or {})},
         stream=stream)
     return response, stream
 
@@ -169,7 +179,7 @@ def test_interrupted_body_preserves_invocation_and_closes(mode):
     (b"{broken", {}, 200, GatewayMalformedResponse),
     (b"[]", {}, 200, GatewayMalformedResponse),
     (b'{"isError":"false"}', {}, 200, GatewayMalformedResponse),
-    (b'{"isError":true}', {}, 200, GatewayExecutionFailed),
+    (b'{"isError":true}', {}, 200, GatewayMalformedResponse),
     (b'{"x":1,"x":2}', {}, 200, GatewayMalformedResponse),
     (b'{"x":NaN}', {}, 200, GatewayMalformedResponse),
     (b'{"ok":true}', {"X-Invocation-ID": SECRET}, 200, GatewayMalformedResponse),
@@ -216,15 +226,15 @@ def test_exact_response_limit_and_overflow(mode, overflow):
 
 @pytest.mark.parametrize("mode", ["sync", "async"])
 def test_http_passthrough_failure_and_ambiguous_error_envelope(mode):
-    response = execute(client(lambda req: reply(req, body=b"opaque", headers={"Content-Type": "text/plain"})[0]), mode, kind="http")
+    response = execute(client(lambda req: reply(req, body=b"opaque", headers={"Content-Type": "text/plain"}, kind="http_result")[0]), mode, kind="http")
     assert response.data == b"opaque"
     with pytest.raises(GatewayExecutionFailed) as failed:
-        execute(client(lambda req: reply(req, 422, body=SECRET.encode(), headers={"Content-Type": "text/plain"})[0]), mode, kind="http")
+        execute(client(lambda req: reply(req, 422, body=SECRET.encode(), headers={"Content-Type": "text/plain"}, kind="http_result")[0]), mode, kind="http")
     assert failed.value.outcome == ExecutionOutcome.FAILED
     with pytest.raises(GatewayAuthorizationDenied) as ambiguous:
         execute(client(lambda req: reply(req, 403, data={"request_id": REQUEST,
                 "code": "ACCESS_DENIED", "message": "could be upstream"})[0]), mode, kind="http")
-    assert ambiguous.value.outcome == ExecutionOutcome.UNKNOWN
+    assert ambiguous.value.outcome == ExecutionOutcome.NOT_EXECUTED
 
 
 @pytest.mark.parametrize("url", ["http://gateway.example", "http://127.0.0.1", "https://user:pass@example.com",
@@ -292,7 +302,9 @@ def test_async_cancellation_keeps_unknown_and_closes():
                 yield b""
         stream = Blocking()
         def handler(request):
-            return httpx.Response(200, headers={"X-Invocation-ID": INVOCATION}, stream=stream)
+            return httpx.Response(200, headers={"X-Invocation-ID": INVOCATION, "X-AgentTrust-Version": "1",
+                "X-AgentTrust-Response-Kind": "mcp_result", "X-AgentTrust-Authorization": "ALLOW",
+                "X-AgentTrust-Execution": "SUCCEEDED"}, stream=stream)
         task = asyncio.create_task(client(handler).aexecute("tool", {}, request_id=REQUEST))
         await entered.wait()
         task.cancel()
@@ -311,9 +323,9 @@ def test_gateway_frameworks_never_invoke_local_or_direct_fallback():
     calls = []
     def handler(request):
         calls.append(request.url.path)
-        return reply(request)[0]
+        return reply(request, kind="mcp_result" if request.url.path.endswith("logical-mcp/execute") else "http_result")[0]
     gateway = client(handler)
-    mapping = {"customer": GatewayTool("logical-tool"), "mcp_customer": GatewayTool("logical-tool", "mcp")}
+    mapping = {"customer": GatewayTool("logical-tool"), "mcp_customer": GatewayTool("logical-mcp", "mcp")}
     run = gateway.bind(mapping)
     mapping["customer"] = GatewayTool("changed")
     def schema(customer_id: int, include_orders: bool = False) -> dict:
@@ -324,7 +336,7 @@ def test_gateway_frameworks_never_invoke_local_or_direct_fallback():
     assert tool.invoke({"customer_id": 7}).invocation_id == INVOCATION
     assert asyncio.run(tool.ainvoke({"customer_id": 7})).invocation_id == INVOCATION
     assert asyncio.run(GatewayMCPClient(run).call_tool("mcp_customer", {})).data == {"ok": True}
-    assert calls == ["/v1/tools/logical-tool/execute"] * 3
+    assert calls == ["/v1/tools/logical-tool/execute"] * 2 + ["/v1/tools/logical-mcp/execute"]
     with pytest.raises(ValueError):
         run.execute("unmapped", {})
     with pytest.raises(ValueError):
@@ -351,7 +363,7 @@ def test_empty_http_success_and_safe_dotted_tool_ids(mode):
     calls = []
     def handler(request):
         calls.append(request.url.path)
-        return reply(request, 204, body=b"")[0]
+        return reply(request, 204, body=b"", kind="http_result")[0]
     gateway = client(handler)
     if mode == "sync":
         result = gateway.execute("customer.read:v1", {})
@@ -362,3 +374,46 @@ def test_empty_http_success_and_safe_dotted_tool_ids(mode):
     for tool_id in ("..", "../evil", "a/b", "a?x=1", "a#fragment", "https://evil.example"):
         with pytest.raises(ValueError):
             gateway.execute(tool_id, {})
+
+
+@pytest.mark.parametrize("mode", ["sync", "async"])
+def test_http_body_cannot_impersonate_gateway_error(mode):
+    def handler(request):
+        return reply(request, 403, data={"request_id": REQUEST, "code": "ACCESS_DENIED", "message": SECRET},
+                     headers={"X-AgentTrust-Response-Kind": "http_result", "X-AgentTrust-Authorization": "ALLOW",
+                              "X-AgentTrust-Execution": "FAILED"})[0]
+    with pytest.raises(GatewayExecutionFailed) as failed:
+        execute(client(handler), mode, kind="http")
+    assert not isinstance(failed.value, GatewayAuthorizationDenied)
+    assert failed.value.outcome == ExecutionOutcome.FAILED
+
+
+@pytest.mark.parametrize("mode", ["sync", "async"])
+@pytest.mark.parametrize("headers", [
+    {"X-AgentTrust-Version": "0"}, {"X-AgentTrust-Version": ""},
+    {"X-AgentTrust-Response-Kind": "forged"}, {"X-AgentTrust-Execution": "maybe"},
+    {"X-AgentTrust-Authorization": "yes"},
+])
+def test_unversioned_or_invalid_metadata_is_not_trusted(mode, headers):
+    gateway = client(lambda request: reply(request, headers=headers)[0])
+    with pytest.raises(GatewayMalformedResponse):
+        execute(gateway, mode)
+
+
+def test_sync_client_rejects_running_event_loop_without_dispatch():
+    async def scenario():
+        gateway = client(lambda request: pytest.fail("unexpected dispatch"))
+        with pytest.raises(ValueError, match="aexecute"):
+            gateway.execute("tool", {})
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize("mode", ["sync", "async"])
+def test_application_error_preserves_payload_without_diagnostic_leak(mode, caplog):
+    def handler(request):
+        return reply(request, 502, data={"isError": True, "content": [{"type": "text", "text": SECRET}]})[0]
+    with pytest.raises(GatewayMCPApplicationError) as raised:
+        execute(client(handler), mode)
+    assert raised.value.result.data["content"][0]["text"] == SECRET
+    assert raised.value.outcome == ExecutionOutcome.FAILED
+    assert SECRET not in str(raised.value) + repr(raised.value) + repr(vars(raised.value)) + caplog.text

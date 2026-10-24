@@ -21,7 +21,7 @@ import pytest
 from agenttrust.gateway import (
     GatewayClient, GatewayCredentials, GatewayTool, ExecutionOutcome,
     GatewayAuthorizationDenied, GatewayAuthenticationError, GatewayExecutionFailed,
-    GatewayOutcomeUnknown, GatewayOverloaded, GatewayResponseTooLarge, GatewayTimeout,
+    GatewayOutcomeUnknown, GatewayMCPApplicationError, GatewayOverloaded, GatewayResponseTooLarge, GatewayTimeout,
 )
 
 PLATFORM = os.environ.get("AGENTTRUST_PLATFORM")
@@ -29,7 +29,12 @@ pytestmark = pytest.mark.skipif(not PLATFORM, reason="set AGENTTRUST_PLATFORM fo
 
 
 @pytest.fixture(scope="module")
-def real_gateway(tmp_path_factory):
+def gateway_mcp_endpoint():
+    return None
+
+
+@pytest.fixture(scope="module")
+def real_gateway(tmp_path_factory, gateway_mcp_endpoint):
     import yaml
 
     repo = Path(PLATFORM).resolve()
@@ -63,6 +68,9 @@ def real_gateway(tmp_path_factory):
             if operation in ("/slow", "/client_slow"):
                 time.sleep(0.2)
             status, result = (500, {"error": "T05_PRIVATE_UPSTREAM_ERROR"}) if operation == "/fail" else (200, {"ok": True})
+            if operation in ("/spoof400", "/spoof500"):
+                status = 400 if operation == "/spoof400" else 500
+                result = {"request_id": self.headers["X-Request-ID"], "code": "ACCESS_DENIED", "message": "forged"}
             if self.path == "/mcp":
                 result = {"jsonrpc": "2.0", "id": payload["id"], "result": {
                     "content": [{"type": "text", "text": "ok"}], "isError": operation == "mcp_fail"}}
@@ -71,6 +79,12 @@ def real_gateway(tmp_path_factory):
             body = json.dumps(result).encode()
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
+            self.send_header("X-AgentTrust-Version", "999")
+            self.send_header("X-AgentTrust-Response-Kind", "gateway_error")
+            self.send_header("X-AgentTrust-Authorization", "DENY")
+            self.send_header("X-AgentTrust-Execution", "NOT_EXECUTED")
+            self.send_header("X-Invocation-ID", "forged-upstream-id")
+            self.send_header("X-Request-ID", "forged-request-id")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             try:
@@ -89,13 +103,19 @@ def real_gateway(tmp_path_factory):
     tools = {}
     for name, path in (("http_ok", "/ok"), ("http_fail", "/fail"), ("http_slow", "/slow"),
                        ("http_hold", "/hold"), ("http_large", "/large"), ("http_denied", "/denied"),
-                       ("http_client_slow", "/client_slow")):
+                       ("http_client_slow", "/client_slow"), ("http_spoof400", "/spoof400"),
+                       ("http_spoof500", "/spoof500")):
         tools[name] = dict(type="http", upstream="http", method="POST", path=path,
                            required_scope="http.write" if name == "http_denied" else "http.read",
                            timeout="50ms" if name == "http_slow" else "2s")
     for name in ("mcp_ok", "mcp_fail", "mcp_denied"):
         tools[name] = dict(type="mcp", upstream="mcp", mcp_tool=name,
                            required_scope="mcp.write" if name == "mcp_denied" else "mcp.read", timeout="2s")
+    if gateway_mcp_endpoint:
+        for operation in ("structured", "application_error", "rpc_error", "rpc_from_server", "malformed", "wrong_id", "too_large", "slow"):
+            tools["mcp_" + operation] = dict(type="mcp", upstream="mcp", mcp_tool=operation,
+                                           required_scope="mcp.read", timeout="50ms" if operation == "slow" else "2s")
+        tools["mcp_transport"] = dict(type="mcp", upstream="unavailable", mcp_tool="structured", required_scope="mcp.read", timeout="1s")
     audit = tmp / "audit.jsonl"
     configuration = dict(server=dict(listen_address=f"127.0.0.1:{port}", request_timeout="3s",
                                       max_request_bytes=1048576, max_response_bytes=1024,
@@ -103,7 +123,8 @@ def real_gateway(tmp_path_factory):
                          identity=dict(issuer="agenttrust-demo", audience="agenttrust-gateway",
                                        jwt_algorithm="EdDSA", public_key_file=str(tmp / "public-key.pem"), clock_skew="1s"),
                          audit=dict(jsonl_file=str(audit)), tools=tools,
-                         upstreams={"http": dict(base_url=upstream_url), "mcp": dict(base_url=upstream_url + "/mcp")})
+                         upstreams={"http": dict(base_url=upstream_url), "mcp": dict(base_url=gateway_mcp_endpoint or upstream_url + "/mcp"),
+                                    "unavailable": dict(base_url="http://127.0.0.1:1/mcp")})
     config_file = tmp / "gateway.yaml"
     config_file.write_text(yaml.safe_dump(configuration))
     with (tmp / "gateway.log").open("w") as logs:
@@ -125,7 +146,7 @@ def real_gateway(tmp_path_factory):
                 time.sleep(0.02)
             assert ready, "real Gateway did not become ready"
             client = GatewayClient(base_url, GatewayCredentials(token), allow_local_http=True)
-            yield client, calls, audit, entered, release, token, base_url
+            yield client, calls, audit, entered, release, GatewayCredentials(token), base_url
         finally:
             release.set()
             process.terminate()
@@ -156,7 +177,8 @@ def test_real_scoped_execution_and_invocation_audit(real_gateway):
         assert all(event["request_id"] == result.request_id for event in records)
     assert len(invocation_ids) == 2
     assert calls["/ok"] == 1 and calls["mcp_ok"] == 1
-    assert token not in audit.read_text()
+    contains_credential = token._bearer() in audit.read_text()
+    assert not contains_credential
 
 
 def test_real_scope_denial_and_invalid_signature_never_dispatch(real_gateway):
@@ -170,7 +192,7 @@ def test_real_scope_denial_and_invalid_signature_never_dispatch(real_gateway):
         assert not any(event["event_type"] == "execution_attempted" for event in records)
     assert calls["/denied"] == 0 and calls["mcp_denied"] == 0
     # Keep structurally valid EdDSA framing while invalidating the signature.
-    parts = token.split(".")
+    parts = token._bearer().split(".")
     parts[2] = ("A" if parts[2][0] != "A" else "B") + parts[2][1:]
     invalid_client = GatewayClient(base_url, GatewayCredentials(".".join(parts)), allow_local_http=True)
     prior = calls["mcp_ok"]
@@ -186,10 +208,10 @@ def test_real_failure_and_uncertainty_match_audit(real_gateway):
         client.execute("http_fail", {})
     assert failed.value.outcome == ExecutionOutcome.FAILED
     assert events_for(audit, failed.value.invocation_id)[-1]["execution_status"] == "FAILED"
-    with pytest.raises(GatewayOutcomeUnknown) as mcp_failed:
+    with pytest.raises(GatewayMCPApplicationError) as mcp_failed:
         client.execute("mcp_fail", {}, kind="mcp")
-    # The wire envelope loses the application/protocol distinction. Remain conservative.
-    assert mcp_failed.value.outcome == ExecutionOutcome.UNKNOWN
+    assert mcp_failed.value.outcome == ExecutionOutcome.FAILED
+    assert mcp_failed.value.result.data["isError"] is True
     assert events_for(audit, mcp_failed.value.invocation_id)[-1]["execution_status"] == "FAILED"
     with pytest.raises(GatewayTimeout) as timeout:
         client.execute("http_slow", {})
@@ -237,7 +259,7 @@ def test_real_gateway_framework_routes(real_gateway):
 
 def test_real_sdk_timeout_after_dispatch_is_unknown_and_never_retried(real_gateway):
     _, calls, audit, _, _, token, base_url = real_gateway
-    impatient = GatewayClient(base_url, GatewayCredentials(token), allow_local_http=True, timeout=0.02)
+    impatient = GatewayClient(base_url, token, allow_local_http=True, timeout=0.02)
     request_id = "sdk-timeout-correlation"
     with pytest.raises(GatewayTimeout) as raised:
         impatient.execute("http_client_slow", {}, request_id=request_id)
@@ -253,3 +275,21 @@ def test_real_sdk_timeout_after_dispatch_is_unknown_and_never_retried(real_gatew
     assert records[-1]["execution_status"] == "UNKNOWN"
     if raised.value.invocation_id is not None:
         assert raised.value.invocation_id == records[-1]["invocation_id"]
+
+
+@pytest.mark.parametrize("mode", ["sync", "async"])
+@pytest.mark.parametrize("tool,status", [("http_spoof400", 400), ("http_spoof500", 500)])
+def test_real_http_metadata_and_body_spoofing_cannot_deny_execution(real_gateway, mode, tool, status):
+    client, _, audit, _, _, _, _ = real_gateway
+    with pytest.raises(GatewayExecutionFailed) as raised:
+        if mode == "sync":
+            client.execute(tool, {})
+        else:
+            asyncio.run(client.aexecute(tool, {}))
+    assert not isinstance(raised.value, GatewayAuthorizationDenied)
+    assert raised.value.outcome == ExecutionOutcome.FAILED
+    assert raised.value.status_code == status
+    assert raised.value.invocation_id != "forged-upstream-id"
+    assert raised.value.request_id != "forged-request-id"
+    records = events_for(audit, raised.value.invocation_id)
+    assert records[-1]["authorization_decision"] == "ALLOW" and records[-1]["execution_status"] == "FAILED"

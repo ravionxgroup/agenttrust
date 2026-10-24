@@ -7,16 +7,38 @@ import importlib
 import os
 import tempfile
 import unittest
+from contextlib import asynccontextmanager
 
 mcp_available = importlib.util.find_spec("mcp") is not None
+
+
+@asynccontextmanager
+async def connected_session(server):
+    """Test harness for MCP 1.x/2.x without the removed high-level helper."""
+    import anyio
+    from mcp import ClientSession
+    from mcp.shared.memory import create_client_server_memory_streams
+
+    lowlevel = getattr(server, "_lowlevel_server", None)
+    if lowlevel is None:
+        lowlevel = server._mcp_server
+    async with create_client_server_memory_streams() as (client_streams, server_streams):
+        async with anyio.create_task_group() as group:
+            group.start_soon(lowlevel.run, *server_streams, lowlevel.create_initialization_options())
+            async with ClientSession(*client_streams) as session:
+                await session.initialize()
+                yield session
+            group.cancel_scope.cancel()
 
 
 @unittest.skipUnless(mcp_available, "mcp package not installed")
 class RealMCPIntegrationTest(unittest.IsolatedAsyncioTestCase):
     def _make_server(self):
-        from mcp.server.fastmcp import FastMCP
-
-        server = FastMCP("test-server")
+        try:
+            from mcp.server.mcpserver import MCPServer
+        except ImportError:
+            from mcp.server.fastmcp import FastMCP as MCPServer
+        server = MCPServer("test-server")
 
         @server.tool(meta={"agenttrust/scope": "crm.read"})
         def get_customer(customer_id: int) -> dict:
@@ -45,12 +67,11 @@ class RealMCPIntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_scope_discovery_from_real_tool_meta(self):
         """Tool.meta (_meta JSON alias) is correctly read by the scope resolver."""
-        from mcp.shared.memory import create_connected_server_and_client_session
         from agenttrust.mcp import wrap_mcp_client
 
         with tempfile.TemporaryDirectory() as tmp:
             _, run = self._make_run(os.path.join(tmp, "audit.jsonl"))
-            async with create_connected_server_and_client_session(self._make_server()) as session:
+            async with connected_session(self._make_server()) as session:
                 mcp = wrap_mcp_client(run, session, default_to_tool_name=False)
                 scopes = await mcp.load_tool_scopes()
 
@@ -59,18 +80,17 @@ class RealMCPIntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_allowed_call_runs_and_audits(self):
         """Allowed MCP tool call executes and produces an allow audit event."""
-        from mcp.shared.memory import create_connected_server_and_client_session
         from agenttrust.mcp import wrap_mcp_client
 
         with tempfile.TemporaryDirectory() as tmp:
             audit_path = os.path.join(tmp, "audit.jsonl")
             at, run = self._make_run(audit_path)
-            async with create_connected_server_and_client_session(self._make_server()) as session:
+            async with connected_session(self._make_server()) as session:
                 mcp = wrap_mcp_client(run, session, default_to_tool_name=False)
                 await mcp.load_tool_scopes()
                 result = await mcp.call_tool("get_customer", {"customer_id": 42})
 
-            self.assertFalse(result.isError)
+            self.assertFalse(result.model_dump(by_alias=True)["isError"])
             events = at.audit.read_all()
             self.assertEqual(len(events), 1)
             self.assertEqual(events[0]["decision"], "allow")
@@ -79,14 +99,13 @@ class RealMCPIntegrationTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_denied_call_blocked_before_server_and_audited(self):
         """Out-of-scope MCP tool is blocked before the server receives it; secret is redacted."""
-        from mcp.shared.memory import create_connected_server_and_client_session
         from agenttrust import ToolDenied
         from agenttrust.mcp import wrap_mcp_client
 
         with tempfile.TemporaryDirectory() as tmp:
             audit_path = os.path.join(tmp, "audit.jsonl")
             at, run = self._make_run(audit_path)
-            async with create_connected_server_and_client_session(self._make_server()) as session:
+            async with connected_session(self._make_server()) as session:
                 mcp = wrap_mcp_client(run, session, default_to_tool_name=False)
                 await mcp.load_tool_scopes()
                 with self.assertRaises(ToolDenied):

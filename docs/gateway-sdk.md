@@ -1,4 +1,7 @@
-# Python SDK Gateway mode (T05)
+# Python SDK Gateway mode (T05/T06)
+
+The authoritative versioned wire contract and compatibility notes are in
+[Gateway execution protocol 1](gateway-protocol.md).
 
 Gateway mode sends every tool execution to the Go Gateway. The Gateway verifies
 identity, looks up the trusted tool, authorizes its exact required scope, applies
@@ -111,6 +114,7 @@ Content-Type: application/json
 Accept: application/json
 Accept-Encoding: identity
 X-Request-ID: <correlation-id>
+X-AgentTrust-Version: 1
 
 {"argument_name":"value"}
 ```
@@ -133,9 +137,13 @@ The SDK response limit defaults to 4 MiB, configurable from 1 byte to 64 MiB.
 It reads raw streaming chunks of at most 64 KiB, detects overflow, and closes
 without returning partial success. It requests identity encoding and rejects
 compressed responses before decoding to avoid decompression bombs. A trusted
-reverse proxy must honor this identity-encoding contract. HTTPX timeouts default
-to 10 seconds for each connect/read/write/pool operation; this is not a total
-wall-clock deadline for a slow stream. Async cancellation closes the transport
+reverse proxy must honor this identity-encoding contract. `timeout` defaults to 10 seconds as an absolute monotonic budget across the
+cancellable network exchange, with HTTPX I/O timeouts as defense in depth. Both
+sync and async execution share the same async engine. Sync execute owns a private
+event loop and must not be called inside an active loop; use aexecute there.
+Sync-only injected transports are rejected. Blocking providers/transports, CPU
+work, DNS executor shutdown and cleanup can delay return: this is not a hard
+real-time process deadline. See the detailed limits in gateway-protocol.md. Async cancellation closes the transport
 and raises `GatewayCancelled` (a `GatewayOutcomeUnknown`, deliberately a domain
 exception rather than `asyncio.CancelledError`) so correlation/outcome metadata
 survives Python 3.9 task boundaries. It does not cancel or roll back remote work.
@@ -174,26 +182,27 @@ credential/argument logs and disables no TLS verification.
 | Confirmed HTTP non-2xx response without reserved error envelope | `GatewayExecutionFailed` / FAILED |
 | Connection error or upstream unavailable | `GatewayUnavailable` / UNKNOWN |
 | Client or Gateway timeout | `GatewayTimeout` / UNKNOWN |
-| MCP `UPSTREAM_ERROR` or internal error | `GatewayOutcomeUnknown` / UNKNOWN |
+| MCP application result with isError true | `GatewayMCPApplicationError` / FAILED, result preserved |
+| MCP JSON-RPC error | `GatewayMCPProtocolError` / UNKNOWN |
+| Internal error | `GatewayOutcomeUnknown` / UNKNOWN |
 | SDK/Gateway response overflow | `GatewayResponseTooLarge` / UNKNOWN |
 | Malformed response or metadata | `GatewayMalformedResponse` / UNKNOWN |
 | Redirect | `GatewayRedirectRejected` / UNKNOWN |
 | Async cancellation | `GatewayCancelled` / UNKNOWN |
 
-For configured MCP paths, recognized Gateway authentication, authorization,
-request-validation and overload errors prove NOT_EXECUTED. On HTTP passthrough
-paths, an upstream can imitate the exact Gateway error envelope. Those errors
-retain their typed category but conservatively report UNKNOWN rather than
-claiming non-execution. Correct `GatewayTool.kind` configuration is required.
-Unknown MCP error envelopes are malformed responses, not confirmed failures.
+Version-1 metadata distinguishes Gateway errors from upstream HTTP responses.
+Recognized pre-dispatch authentication, authorization, request and overload errors
+are NOT_EXECUTED for both HTTP and MCP. An upstream HTTP body that imitates a
+Gateway error remains an HTTP application response, never a security denial.
+Missing/unsupported metadata fails closed as UNKNOWN; there is no silent legacy
+interpretation. HTTP status/body passthrough is preserved by the Gateway.
 
-The Gateway maps MCP application failures, protocol errors and missing tools to
-the same `UPSTREAM_ERROR` envelope. The SDK cannot recover the finer audit
-classification and conservatively returns UNKNOWN for all of them. The Gateway
-audit may have stronger FAILED evidence. No Gateway/schema change is necessary;
-use invocation identity to inspect durable evidence. A successful response is
-not proof of terminal audit persistence, which may fail after execution under
-T02. This SDK does not implement an audit-query endpoint.
+MCP tool-level isError results are FAILED and available at
+`GatewayMCPApplicationError.result.data`. JSON-RPC error objects, malformed results
+and transport failures are distinct error categories and UNKNOWN after dispatch.
+Their raw server messages are not diagnostics. The new headers describe observed
+outcomes, not proof of terminal audit persistence. Use invocation identity to
+inspect durable evidence; this SDK does not implement an audit-query endpoint.
 
 **No automatic execution retries occur.** A timeout, connection interruption,
 malformed/oversized response, or cancellation may follow a completed side effect.
@@ -269,3 +278,12 @@ dependency pin is added. Go `test`, race-enabled `test`, and `vet` pass for the
 unchanged platform checkout. Syntax compilation and `git diff --check` pass.
 Python 3.10–3.12 were not available locally. No private keys or issued tokens
 are embedded in source or repository artifacts.
+
+
+T06 adds 20 real independent MCP 2.x interoperability cases, four real HTTP
+spoofing cases, five slow-drip total-deadline cases and client metadata/application
+error regressions. The old MCP 2.x test-helper/API incompatibility is resolved by
+the test harness without production dependency pins; MCP 1.x local/direct tests
+remain supported. For complete verification install the existing optional MCP
+extra with 2.x in a temporary environment, set AGENTTRUST_PLATFORM, and run the
+suite. The independent fixture imports no AgentTrust implementation.

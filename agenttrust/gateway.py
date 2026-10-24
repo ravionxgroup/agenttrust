@@ -73,6 +73,20 @@ class GatewayOutcomeUnknown(GatewayError):
     pass
 
 
+class GatewayMCPProtocolError(GatewayOutcomeUnknown):
+    pass
+
+
+class GatewayMCPApplicationError(GatewayExecutionFailed):
+    """A valid isError result. result.data is payload, excluded from diagnostics."""
+
+    def __init__(self, result):
+        super().__init__("MCP_APPLICATION_ERROR", outcome=ExecutionOutcome.FAILED,
+                         status_code=result.status_code, request_id=result.request_id,
+                         invocation_id=result.invocation_id)
+        self.result = result
+
+
 class GatewayTimeout(GatewayOutcomeUnknown):
     pass
 
@@ -203,10 +217,13 @@ def _json_loads(body):
 _ERRORS = {
     "UNAUTHENTICATED": (401, GatewayAuthenticationError, True),
     "ACCESS_DENIED": (403, GatewayAuthorizationDenied, True),
-    "INVALID_REQUEST": ((400, 408), GatewayInvalidRequest, True),
+    "INVALID_REQUEST": ((400, 408, 413), GatewayInvalidRequest, True),
     "UNKNOWN_TOOL": (404, GatewayInvalidRequest, True),
     "INVALID_GATEWAY_CONFIGURATION": (500, GatewayUnavailable, True),
     "GATEWAY_OVERLOADED": (503, GatewayOverloaded, True),
+    "MCP_PROTOCOL_ERROR": (502, GatewayMCPProtocolError, False),
+    "MCP_TOOL_NOT_FOUND": (502, GatewayMCPProtocolError, False),
+    "MCP_INVALID_RESPONSE": (502, GatewayMalformedResponse, False),
     "UPSTREAM_TIMEOUT": (504, GatewayTimeout, False),
     "UPSTREAM_UNAVAILABLE": (502, GatewayUnavailable, False),
     "UPSTREAM_ERROR": (502, GatewayOutcomeUnknown, False),
@@ -216,7 +233,7 @@ _ERRORS = {
 
 
 class GatewayClient:
-    """One POST per invocation, with native sync/async I/O and no retries.
+    """One POST per invocation, with a shared cancellable total network deadline.
 
     Transport injection is for trusted testing only. Environment proxies and
     credentials are ignored; TLS verification is always enabled by default.
@@ -233,6 +250,8 @@ class GatewayClient:
             raise ValueError("Gateway timeout must be finite and positive")
         if type(max_response_bytes) is not int or not 1 <= max_response_bytes <= 64 * 1024 * 1024:
             raise ValueError("Gateway response limit must be between 1 byte and 64 MiB")
+        if transport is not None and not isinstance(transport, httpx.AsyncBaseTransport):
+            raise ValueError("Gateway total deadlines require an async-capable transport")
         self._base_url = _base_url(base_url, allow_local_http)
         self._credentials = credentials
         self._timeout = timeout
@@ -259,7 +278,7 @@ class GatewayClient:
                                         request_id=request_id) from None
         headers = {"Authorization": "Bearer " + self._credentials._bearer(),
                    "Content-Type": "application/json", "Accept": "application/json",
-                   "Accept-Encoding": "identity", "X-Request-ID": request_id}
+                   "Accept-Encoding": "identity", "X-Request-ID": request_id, "X-AgentTrust-Version": "1"}
         return tool, request_id, body, headers
 
     @staticmethod
@@ -274,91 +293,124 @@ class GatewayClient:
         return dict(status_code=response.status_code, request_id=request_id, invocation_id=invocation_id)
 
     def _check_headers(self, response, meta):
-        if 300 <= response.status_code < 400:
-            raise GatewayRedirectRejected("REDIRECT_REJECTED", **meta)
-        # Do not allow decompression to allocate beyond the response limit.
+        # Never infer security decisions from an unversioned body or unknown version.
+        if response.headers.get("X-AgentTrust-Version") != "1":
+            raise GatewayMalformedResponse("UNSUPPORTED_GATEWAY_CONTRACT", **meta)
+        kind = response.headers.get("X-AgentTrust-Response-Kind")
+        authorization = response.headers.get("X-AgentTrust-Authorization")
+        outcome = response.headers.get("X-AgentTrust-Execution")
+        if (kind not in ("gateway_error", "http_result", "mcp_result")
+                or authorization not in ("ALLOW", "DENY", "UNKNOWN")
+                or outcome not in ExecutionOutcome._value2member_map_):
+            raise GatewayMalformedResponse("INVALID_GATEWAY_METADATA", **meta)
         if response.headers.get("Content-Encoding", "identity").lower() not in ("identity", ""):
             raise GatewayMalformedResponse("UNSUPPORTED_CONTENT_ENCODING", **meta)
-
-    def _consume(self, chunks, meta):
-        body = bytearray()
-        for chunk in chunks:
-            if len(body) + len(chunk) > self._max_response_bytes:
-                raise GatewayResponseTooLarge("SDK_RESPONSE_TOO_LARGE", **meta)
-            body.extend(chunk)
-        return bytes(body)
+        if 300 <= response.status_code < 400:
+            raise GatewayRedirectRejected("REDIRECT_REJECTED", **meta)
 
     def _response(self, response, body, tool, meta):
         status = response.status_code
+        response_kind = response.headers["X-AgentTrust-Response-Kind"]
+        authorization = response.headers["X-AgentTrust-Authorization"]
+        outcome = ExecutionOutcome(response.headers["X-AgentTrust-Execution"])
         is_json = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() == "application/json"
+        if response_kind == "gateway_error":
+            try:
+                parsed = _json_loads(body)
+                if (not is_json or type(parsed) is not dict or set(parsed) != {"request_id", "code", "message"}
+                        or parsed["request_id"] != meta["request_id"] or type(parsed["code"]) is not str
+                        or parsed["code"] not in _ERRORS or type(parsed["message"]) is not str):
+                    raise ValueError
+                expected_status, error_type, before_dispatch = _ERRORS[parsed["code"]]
+                allowed = expected_status if type(expected_status) is tuple else (expected_status,)
+                if parsed["code"] in ("ACCESS_DENIED", "UNKNOWN_TOOL") and authorization != "DENY":
+                    raise ValueError
+                if parsed["code"] == "UNAUTHENTICATED" and authorization != "UNKNOWN":
+                    raise ValueError
+                if (parsed["code"] == "GATEWAY_OVERLOADED" or parsed["code"].startswith(("UPSTREAM_", "MCP_"))) and authorization != "ALLOW":
+                    raise ValueError
+                if status not in allowed or outcome == ExecutionOutcome.SUCCEEDED:
+                    raise ValueError
+                if before_dispatch and outcome != ExecutionOutcome.NOT_EXECUTED:
+                    raise ValueError
+                if not before_dispatch and outcome not in (ExecutionOutcome.UNKNOWN, ExecutionOutcome.NOT_EXECUTED):
+                    # Legacy application failures are not emitted for negotiated v1 requests.
+                    raise ValueError
+            except (ValueError, UnicodeError, RecursionError, OverflowError):
+                raise GatewayMalformedResponse("MALFORMED_GATEWAY_ERROR", **meta) from None
+            raise error_type(parsed["code"], outcome=outcome, **meta)
+        if response_kind != tool.kind + "_result" or authorization != "ALLOW":
+            raise GatewayMalformedResponse("INVALID_RESULT_METADATA", **meta)
+        if response_kind == "http_result" and not 200 <= status < 300:
+            if outcome != ExecutionOutcome.FAILED:
+                raise GatewayMalformedResponse("INVALID_HTTP_OUTCOME", **meta)
+            # Body contents never participate in control-plane classification.
+            raise GatewayExecutionFailed("HTTP_TOOL_EXECUTION_FAILED", outcome=outcome, **meta)
         parsed = None
-        if not body and tool.kind == "http" and 200 <= status < 300:
-            return GatewayResult(data=None, **meta)
-        if is_json or tool.kind == "mcp":
+        if body and (is_json or tool.kind == "mcp"):
             try:
                 parsed = _json_loads(body)
             except (ValueError, UnicodeError, RecursionError, OverflowError):
                 raise GatewayMalformedResponse("MALFORMED_JSON_RESPONSE", **meta) from None
-        if not 200 <= status < 300:
-            if (is_json and type(parsed) is dict and set(parsed) == {"request_id", "code", "message"}
-                    and type(parsed["code"]) is str and parsed["code"] in _ERRORS
-                    and type(parsed["message"]) is str and parsed["request_id"] == meta["request_id"]):
-                expected_status, error_type, before_dispatch = _ERRORS[parsed["code"]]
-                allowed = expected_status if type(expected_status) is tuple else (expected_status,)
-                if status not in allowed:
-                    raise GatewayMalformedResponse("INVALID_ERROR_STATUS", **meta)
-                # HTTP upstreams can imitate Gateway envelopes. Never infer non-execution
-                # from a reserved error envelope on that passthrough path.
-                outcome = ExecutionOutcome.NOT_EXECUTED if before_dispatch and tool.kind == "mcp" else ExecutionOutcome.UNKNOWN
-                raise error_type(parsed["code"], outcome=outcome, **meta)
-            if tool.kind == "mcp":
-                raise GatewayMalformedResponse("MALFORMED_GATEWAY_ERROR", **meta)
-            raise GatewayExecutionFailed("HTTP_TOOL_EXECUTION_FAILED", outcome=ExecutionOutcome.FAILED, **meta)
-        if tool.kind == "mcp" and type(parsed) is not dict:
-            raise GatewayMalformedResponse("MALFORMED_MCP_RESULT", **meta)
-        if tool.kind == "mcp" and "isError" in parsed:
-            if type(parsed["isError"]) is not bool:
+        if tool.kind == "mcp":
+            if not is_json or type(parsed) is not dict or type(parsed.get("isError", False)) is not bool:
                 raise GatewayMalformedResponse("MALFORMED_MCP_RESULT", **meta)
-            if parsed["isError"]:
-                raise GatewayExecutionFailed("MCP_TOOL_EXECUTION_FAILED", outcome=ExecutionOutcome.FAILED, **meta)
+            if parsed.get("isError", False):
+                if outcome != ExecutionOutcome.FAILED or status != 502:
+                    raise GatewayMalformedResponse("INVALID_MCP_OUTCOME", **meta)
+                raise GatewayMCPApplicationError(GatewayResult(data=parsed, outcome=outcome, **meta))
+        if not 200 <= status < 300 or outcome != ExecutionOutcome.SUCCEEDED:
+            raise GatewayMalformedResponse("INVALID_SUCCESS_OUTCOME", **meta)
         return GatewayResult(data=parsed if is_json or tool.kind == "mcp" else body, **meta)
 
     def execute(self, tool_id: str, arguments: dict, *, kind="http", request_id=None) -> GatewayResult:
-        tool, request_id, body, headers = self._request(tool_id, arguments, kind, request_id)
-        meta = dict(request_id=request_id, invocation_id=None)
+        # A private event loop provides the same cancellation/deadline engine as async
+        # without timer threads, orphan workers, or a second network implementation.
         try:
-            with httpx.Client(timeout=self._timeout, follow_redirects=False, trust_env=False,
-                              transport=self._transport) as client:
-                with client.stream("POST", f"{self._base_url}/v1/tools/{tool.tool_id}/execute",
-                                   content=body, headers=headers) as response:
-                    meta = self._metadata(response, request_id)
-                    self._check_headers(response, meta)
-                    data = self._consume(response.iter_raw(chunk_size=65536), meta)
-                    return self._response(response, data, tool, meta)
-        except httpx.TimeoutException:
-            raise GatewayTimeout("GATEWAY_TIMEOUT", **meta) from None
-        except httpx.RequestError:
-            raise GatewayUnavailable("GATEWAY_UNAVAILABLE", **meta) from None
+            asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+        else:
+            raise ValueError("use aexecute inside a running event loop")
+        return asyncio.run(self._execute(tool_id, arguments, kind=kind, request_id=request_id,
+                                         transport=self._transport or self._async_transport))
 
     async def aexecute(self, tool_id: str, arguments: dict, *, kind="http", request_id=None) -> GatewayResult:
+        return await self._execute(tool_id, arguments, kind=kind, request_id=request_id,
+                                   transport=self._async_transport)
+
+    async def _execute(self, tool_id, arguments, *, kind, request_id, transport):
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + self._timeout
         tool, request_id, body, headers = self._request(tool_id, arguments, kind, request_id)
         meta = dict(request_id=request_id, invocation_id=None)
-        try:
+
+        async def exchange():
             async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=False, trust_env=False,
-                                         transport=self._async_transport) as client:
+                                         transport=transport) as client:
                 async with client.stream("POST", f"{self._base_url}/v1/tools/{tool.tool_id}/execute",
                                          content=body, headers=headers) as response:
-                    meta = self._metadata(response, request_id)
+                    meta.update(self._metadata(response, request_id))
                     self._check_headers(response, meta)
                     data = bytearray()
                     async for chunk in response.aiter_raw(chunk_size=65536):
+                        if loop.time() >= deadline:
+                            raise asyncio.TimeoutError
                         if len(data) + len(chunk) > self._max_response_bytes:
                             raise GatewayResponseTooLarge("SDK_RESPONSE_TOO_LARGE", **meta)
                         data.extend(chunk)
-                    return self._response(response, bytes(data), tool, meta)
+                    result = self._response(response, bytes(data), tool, meta)
+                    if loop.time() >= deadline:
+                        raise asyncio.TimeoutError
+                    return result
+        try:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise GatewayTimeout("GATEWAY_TOTAL_DEADLINE", outcome=ExecutionOutcome.NOT_EXECUTED, **meta)
+            return await asyncio.wait_for(exchange(), timeout=remaining)
         except asyncio.CancelledError:
             raise GatewayCancelled(request_id, meta.get("invocation_id")) from None
-        except httpx.TimeoutException:
+        except (asyncio.TimeoutError, httpx.TimeoutException):
             raise GatewayTimeout("GATEWAY_TIMEOUT", **meta) from None
         except httpx.RequestError:
             raise GatewayUnavailable("GATEWAY_UNAVAILABLE", **meta) from None
