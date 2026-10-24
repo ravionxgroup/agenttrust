@@ -40,6 +40,10 @@ def as_langchain_tool(
     LangChain's @tool decorator). Every call is routed through run.call() so
     it is authorized and audited before fn executes.
     """
+    from .gateway import GatewayRun
+
+    if isinstance(run, GatewayRun):
+        raise ValueError("use as_gateway_langchain_tool for GatewayRun")
     try:
         from langchain_core.tools import StructuredTool
     except ImportError as exc:
@@ -98,3 +102,44 @@ def as_langchain_tools(run: AgentRun, tool_specs: list) -> list:
                 f"Each tool_spec must be a 2–4 element tuple, got {len(spec)} elements"
             )
     return result
+
+
+def as_gateway_langchain_tool(run, tool_name: str, schema_fn: Callable,
+                              name: Optional[str] = None,
+                              description: Optional[str] = None) -> Any:
+    """Use a function signature as the schema only; its body is never executed.
+
+    Both invoke/ainvoke return GatewayResult, preserving invocation metadata.
+    Gateway logical IDs come exclusively from the explicit GatewayRun mapping.
+    """
+    from .gateway import GatewayRun
+
+    if type(run) is not GatewayRun:
+        raise ValueError("GatewayRun required")
+    run._tool(tool_name)  # Fail at construction for unmapped tools.
+    try:
+        from langchain_core.tools import StructuredTool
+    except ImportError:
+        raise ImportError("Gateway LangChain integration requires langchain-core") from None
+    signature = inspect.signature(schema_fn)
+    if any(p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD, p.POSITIONAL_ONLY)
+           for p in signature.parameters.values()):
+        raise ValueError("Gateway tool schemas require named parameters")
+
+    def arguments(args, kwargs):
+        bound = signature.bind(*args, **kwargs)
+        bound.apply_defaults()
+        return dict(bound.arguments)
+
+    @functools.wraps(schema_fn)
+    def invoke(*args, **kwargs):
+        return run.execute(tool_name, arguments(args, kwargs))
+
+    @functools.wraps(schema_fn)
+    async def ainvoke(*args, **kwargs):
+        return await run.aexecute(tool_name, arguments(args, kwargs))
+
+    return StructuredTool.from_function(
+        func=invoke, coroutine=ainvoke, name=name or schema_fn.__name__,
+        description=description or (schema_fn.__doc__ or "").strip() or tool_name,
+    )

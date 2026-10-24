@@ -26,11 +26,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gateway = ["httpx>=0.27,<1"]
 yaml = ["PyYAML>=6.0"]
 mcp = ["mcp>=1.0"]           # requires Python >= 3.10
 langchain = ["langchain-core>=0.1"]
 all = ["PyYAML>=6.0", "langchain-core>=0.1"]
 dev = [
+    "httpx>=0.27,<1",
     "PyYAML>=6.0",
     "langchain-core>=0.1",
     "pytest>=7.0",

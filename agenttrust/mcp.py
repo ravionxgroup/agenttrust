@@ -98,6 +98,10 @@ class GuardedMCPClient:
                  tool_scopes: Optional[Mapping[str, str]] = None,
                  scope_resolver: Optional[Callable[[str], str]] = None,
                  default_to_tool_name: bool = True):
+        from .gateway import GatewayRun
+
+        if isinstance(run, GatewayRun):
+            raise ValueError("use GatewayMCPClient for GatewayRun")
         self._run = run
         self._client = client
         self._resolver = MCPToolScopeResolver(
@@ -173,3 +177,24 @@ def wrap_mcp_client(run: AgentRun, client: Any,
         scope_resolver=scope_resolver,
         default_to_tool_name=default_to_tool_name,
     )
+
+
+class GatewayMCPClient:
+    """Explicit Gateway-only MCP tool calls. No direct session or discovery.
+
+    Returns GatewayResult whose data is the Gateway's unwrapped MCP result object.
+    This is not a universal MCP ClientSession replacement.
+    """
+
+    def __init__(self, run):
+        from .gateway import GatewayRun
+
+        if type(run) is not GatewayRun:
+            raise ValueError("GatewayRun required")
+        self._run = run
+
+    async def call_tool(self, name: str, arguments: Optional[dict] = None, *, request_id=None):
+        if self._run._tool(name).kind != "mcp":
+            raise ValueError("MCP Gateway mapping required")
+        return await self._run.aexecute(name, {} if arguments is None else arguments,
+                                        request_id=request_id)
