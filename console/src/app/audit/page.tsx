@@ -1,10 +1,12 @@
+import { GatewayExplorer, type SearchParams } from "../../components/tables/gateway-audit";
 import { getConsoleDataProvider } from "../../lib/providers";
 import { SourceIndicator } from "../../components/metrics/source-indicator";
 import { AuditExplorer } from "../../components/tables/audit-explorer";
 
-export default async function AuditPage() {
+export default async function AuditPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const provider = await getConsoleDataProvider();
   const snapshot = await provider.getSnapshot();
+  if (snapshot.gateway) return <GatewayExplorer snapshot={snapshot.gateway} source={snapshot.source} params={await searchParams} />;
 
   return (
     <div className="px-6 py-6 lg:px-8">

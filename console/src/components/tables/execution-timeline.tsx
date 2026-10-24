@@ -26,7 +26,7 @@ export function ExecutionTimeline({ events }: { events: AuditEvent[] }) {
               <div
                 className={[
                   "absolute left-0 top-1 h-3 w-3 rounded-full ring-4",
-                  denied ? "bg-rose-300 ring-rose-400/15" : errored ? "bg-amber-300 ring-amber-300/15" : "bg-emerald-300 ring-emerald-400/15",
+                  denied ? "bg-rose-300 ring-rose-400/15" : errored ? "bg-amber-300 ring-amber-300/15" : event.resultStatus === "ok" ? "bg-emerald-300 ring-emerald-400/15" : "bg-slate-300 ring-slate-400/15",
                 ].join(" ")}
                 aria-hidden="true"
               />

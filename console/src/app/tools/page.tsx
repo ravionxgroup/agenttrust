@@ -1,3 +1,4 @@
+import { SourceFailure } from "../../components/tables/gateway-audit";
 import { Hammer, Info } from "lucide-react";
 import { getConsoleDataProvider } from "../../lib/providers";
 import { SourceIndicator } from "../../components/metrics/source-indicator";
@@ -7,6 +8,7 @@ import { SectionCard } from "../../components/layout/section-card";
 export default async function ToolsPage() {
   const provider = await getConsoleDataProvider();
   const snapshot = await provider.getSnapshot();
+  if (snapshot.source.status && snapshot.source.status !== "ready") return <div className="p-6"><SourceFailure source={snapshot.source} /></div>;
 
   return (
     <div className="px-6 py-6 lg:px-8">

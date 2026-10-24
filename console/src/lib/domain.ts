@@ -1,6 +1,6 @@
-export type Decision = "allow" | "deny";
-export type ResultStatus = "ok" | "error" | null;
-export type DataSourceKind = "fixtures" | "jsonl";
+export type Decision = "allow" | "deny" | "unknown";
+export type ResultStatus = "ok" | "error" | "not_executed" | "unknown" | null;
+export type DataSourceKind = "fixtures" | "jsonl" | "gateway";
 export type PolicySourceKind = "fixtures" | "yaml" | "unavailable";
 
 export interface AuditEvent {
@@ -163,6 +163,8 @@ export interface DataSourceInfo {
   kind: DataSourceKind;
   label: string;
   warningCount?: number;
+  status?: "ready" | "unavailable" | "error";
+  code?: string;
 }
 
 export interface PolicySourceInfo {
@@ -180,6 +182,7 @@ export interface ConsoleDataSnapshot {
   policy: PolicyView | null;
   source: DataSourceInfo;
   policySource: PolicySourceInfo;
+  gateway?: import("./gateway/model").GatewaySnapshot;
 }
 
 export interface RawAuditEvent {

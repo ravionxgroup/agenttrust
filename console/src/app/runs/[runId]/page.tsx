@@ -1,3 +1,4 @@
+import { SourceFailure } from "../../../components/tables/gateway-audit";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, CircleSlash, Clock, ListChecks, TerminalSquare } from "lucide-react";
@@ -14,6 +15,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
   const provider = await getConsoleDataProvider();
   const run = await provider.getRun(decodedRunId);
   const source = provider.getSourceInfo();
+  if (source.status && source.status !== "ready") return <div className="p-6"><SourceFailure source={source} /></div>;
 
   if (!run) {
     return (
@@ -77,7 +79,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
               {run.tokenId ? (
                 <dd className="mt-1"><TechId>{truncateId(run.tokenId, 18)}</TechId></dd>
               ) : (
-                <dd className="mt-1 text-sm text-amber-200">Multiple token IDs observed</dd>
+                <dd className="mt-1 text-sm text-amber-200">{source.kind === "gateway" ? "Token IDs omitted from the audit view" : "Multiple token IDs observed"}</dd>
               )}
             </div>
           </dl>

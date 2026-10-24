@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "../components/layout/sidebar";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "AgentTrust Console",
   description: "Agent identity, authorization, and audit visibility.",

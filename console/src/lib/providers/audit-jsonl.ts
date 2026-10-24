@@ -2,7 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { deriveAgentDetails, deriveAgents, deriveOverview, deriveRunDetails, deriveRuns, deriveToolDetails, deriveTools, filterAuditEvents } from "../derive";
 import type { AgentDetails, AgentSummary, AuditEvent, AuditFilters, ConsoleDataSnapshot, DataSourceInfo, Overview, PolicySourceInfo, PolicyView, RawAuditEvent, RunDetails, RunSummary, ToolDetails, ToolSummary } from "../domain";
-import { FixturesProvider } from "./fixtures";
+
 import type { ConsoleDataProvider } from "./provider";
 import { loadPolicyFromEnvironment } from "./policy";
 
@@ -57,15 +57,13 @@ export class AuditJsonlProvider implements ConsoleDataProvider {
 
   static async fromEnvironment(): Promise<ConsoleDataProvider> {
     const auditPath = process.env.AGENTTRUST_AUDIT_PATH;
-    if (!auditPath) {
-      return new FixturesProvider();
-    }
+    if (!auditPath) throw new Error("SDK audit source is not configured");
 
     try {
       await access(auditPath, constants.R_OK);
       return new AuditJsonlProvider(auditPath);
     } catch {
-      return new FixturesProvider();
+      throw new Error("SDK audit source unavailable");
     }
   }
 

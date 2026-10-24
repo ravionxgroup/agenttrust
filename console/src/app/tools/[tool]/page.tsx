@@ -1,3 +1,4 @@
+import { SourceFailure } from "../../../components/tables/gateway-audit";
 import Link from "next/link";
 import { AlertTriangle, Bot, CircleSlash, Hammer, ListChecks, TerminalSquare } from "lucide-react";
 import { getConsoleDataProvider } from "../../../lib/providers";
@@ -14,6 +15,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
   const provider = await getConsoleDataProvider();
   const tool = await provider.getTool(decodedToolName);
   const source = provider.getSourceInfo();
+  if (source.status && source.status !== "ready") return <div className="p-6"><SourceFailure source={source} /></div>;
 
   if (!tool) {
     return (

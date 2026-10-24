@@ -26,7 +26,7 @@ export default async function PoliciesPage() {
       <SectionCard className="mb-4 flex items-start gap-3 p-4">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-200" aria-hidden="true" />
         <p className="ui-muted">
-          This is declared configuration. Enforcement remains in the AgentTrust SDK, and agents without a defined policy receive no scopes.
+          {snapshot.gateway ? "Gateway policy is not ingested. Authorization decisions shown by the Console come from persisted audit evidence; enforcement remains in the Gateway." : "This is declared local SDK configuration. It is separate from Gateway enforcement."}
         </p>
       </SectionCard>
 
@@ -87,7 +87,7 @@ export default async function PoliciesPage() {
           <FileText className="mx-auto h-8 w-8 text-slate-600" aria-hidden="true" />
           <h3 className="ui-section-title mt-3">Policy Unavailable</h3>
           <p className="ui-muted mx-auto mt-2 max-w-xl">
-            Configure <TechId>AGENTTRUST_POLICY_PATH</TechId> with a readable AgentTrust policy YAML file to inspect declared scopes.
+            {snapshot.gateway ? "Gateway mode displays audit evidence only; policy configuration is not loaded by this viewer." : <>Configure <TechId>AGENTTRUST_POLICY_PATH</TechId> with a readable AgentTrust policy YAML file to inspect declared scopes.</>}
           </p>
         </SectionCard>
       )}

@@ -22,14 +22,14 @@ export function truncateId(value: string, prefixLength = 14): string {
   return `${value.slice(0, prefixLength)}...`;
 }
 
-export function formatResult(resultStatus: "ok" | "error" | null, decision: "allow" | "deny"): string {
-  if (decision === "deny") {
+export function formatResult(resultStatus: import("./domain").ResultStatus, decision: import("./domain").Decision): string {
+  if (resultStatus === "not_executed" || decision === "deny") {
     return "NOT EXECUTED";
   }
   if (resultStatus === "error") {
     return "ERROR";
   }
-  return "OK";
+  return resultStatus === "ok" ? "OK" : "UNKNOWN";
 }
 
 export function stringifyJson(value: unknown): string {

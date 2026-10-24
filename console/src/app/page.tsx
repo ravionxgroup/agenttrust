@@ -1,3 +1,4 @@
+import { GatewayOverview } from "../components/tables/gateway-audit";
 import { AlertTriangle, Bot, CircleSlash, ListChecks, TerminalSquare } from "lucide-react";
 import { getConsoleDataProvider } from "../lib/providers";
 import { MetricCard } from "../components/metrics/metric-card";
@@ -9,6 +10,7 @@ import { TechId } from "../components/badges/tech-id";
 export default async function OverviewPage() {
   const provider = await getConsoleDataProvider();
   const snapshot = await provider.getSnapshot();
+  if (snapshot.gateway) return <GatewayOverview snapshot={snapshot.gateway} source={snapshot.source} />;
   const { overview, source } = snapshot;
   const totalAuthorizationDecisions = Math.max(
     overview.authorizationSummary.allowed + overview.authorizationSummary.denied,

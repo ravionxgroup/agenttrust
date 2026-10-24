@@ -1,3 +1,4 @@
+import { SourceFailure } from "../../../components/tables/gateway-audit";
 import Link from "next/link";
 import { AlertTriangle, CircleSlash, Hammer, ListChecks, TerminalSquare } from "lucide-react";
 import { getConsoleDataProvider } from "../../../lib/providers";
@@ -17,6 +18,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
   const policy = await provider.getPolicy();
   const declaredPolicy = policy?.agents.find((item) => item.agentId === decodedAgentId) ?? null;
   const source = provider.getSourceInfo();
+  if (source.status && source.status !== "ready") return <div className="p-6"><SourceFailure source={source} /></div>;
 
   if (!agent) {
     return (
