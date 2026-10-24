@@ -9,10 +9,11 @@ tamper-evidence, search, and SIEM export are the paid plane.
 from __future__ import annotations
 
 import json
+import math
 import threading
 import time
 import uuid
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, fields
 from typing import Optional, Any
 
 
@@ -43,7 +44,7 @@ class AuditEvent:
             required_scope=required_scope,
             decision=decision,
             reason=reason,
-            args_redacted=args_redacted or {},
+            args_redacted={} if args_redacted is None else args_redacted,
             result_status=result_status,
         )
 
@@ -56,9 +57,20 @@ class AuditSink:
         self._lock = threading.Lock()
 
     def write(self, event: AuditEvent) -> None:
+        if type(event) is not AuditEvent:
+            raise TypeError("audit event must be an AuditEvent")
+        # Do not use asdict/deepcopy: they can recurse or execute object hooks.
+        payload = {
+            field.name: object.__getattribute__(event, field.name)
+            for field in fields(AuditEvent)
+        }
+        arguments = redact_args(payload.pop("args_redacted"))
+        payload = redact_args(payload)
+        payload["args_redacted"] = arguments
+        encoded = json.dumps(payload, separators=(",", ":"), allow_nan=False) + "\n"
         with self._lock:
             with open(self.path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(asdict(event), separators=(",", ":")) + "\n")
+                f.write(encoded)
 
     def read_all(self) -> list[dict]:
         try:
@@ -84,28 +96,63 @@ _SENSITIVE_KEYS = {
 }
 
 
-def _json_safe(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {str(k): _json_safe(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_json_safe(v) for v in value]
-    if isinstance(value, (str, int, float, bool)) or value is None:
+MAX_AUDIT_DEPTH = 16
+MAX_AUDIT_COLLECTION = 128
+MAX_AUDIT_VALUES = 2048
+MAX_AUDIT_STRING = 256
+REDACTED = "***redacted***"
+UNSAFE = "[UNSAFE]"
+
+
+class _BudgetExceeded(Exception):
+    pass
+
+
+def _sanitize(value: Any, depth: int, active: set, budget: list) -> Any:
+    budget[0] -= 1
+    if budget[0] < 0:
+        raise _BudgetExceeded
+    kind = type(value)
+    if kind is str:
+        if len(value) > MAX_AUDIT_STRING:
+            return value[:MAX_AUDIT_STRING] + "...(truncated)"
         return value
-    return repr(value)
+    if value is None or kind is bool:
+        return value
+    if kind is int:
+        return value if value.bit_length() <= 256 else UNSAFE
+    if kind is float:
+        return value if math.isfinite(value) else UNSAFE
+    # Exact built-in types only: never invoke custom iterators, repr, str,
+    # deepcopy, truthiness, comparison or serialization hooks.
+    if kind not in (dict, list, tuple):
+        return UNSAFE
+    if depth >= MAX_AUDIT_DEPTH or len(value) > MAX_AUDIT_COLLECTION or id(value) in active:
+        return UNSAFE
+    active.add(id(value))
+    try:
+        if kind is dict:
+            out = {}
+            for key, item in value.items():
+                if type(key) is not str or len(key) > MAX_AUDIT_STRING:
+                    return UNSAFE
+                out[key] = _sanitize(
+                    REDACTED if key.strip().lower().replace("-", "_") in _SENSITIVE_KEYS else item,
+                    depth + 1, active, budget,
+                )
+            return out
+        return [_sanitize(item, depth + 1, active, budget) for item in value]
+    finally:
+        active.remove(id(value))
 
 
 def redact_args(args: dict[str, Any]) -> dict[str, Any]:
-    out = {}
-    for k, v in (args or {}).items():
-        if k.lower() in _SENSITIVE_KEYS:
-            out[k] = "***redacted***"
-        elif isinstance(v, str) and len(v) > 256:
-            out[k] = v[:256] + "...(truncated)"
-        elif isinstance(v, dict):
-            out[k] = redact_args(v)
-        elif isinstance(v, (list, tuple)):
-            out[k] = [redact_args(item) if isinstance(item, dict) else _json_safe(item)
-                      for item in v]
-        else:
-            out[k] = _json_safe(v)
-    return out
+    """Bounded recursive redaction. Unsafe roots become a placeholder mapping."""
+    if args is None:
+        return {}
+    try:
+        result = _sanitize(args, 0, set(), [MAX_AUDIT_VALUES])
+    except Exception:
+        # Includes concurrent container mutation; never stringify the failure.
+        result = UNSAFE
+    return result if type(result) is dict else {"_sanitization": UNSAFE}

@@ -1,23 +1,18 @@
+const CONSOLE_LOCALE = "en-US";
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 export function formatTimestamp(epochSeconds: number): string {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(epochSeconds * 1000));
+  const parts = getUtcTimestampParts(epochSeconds);
+  return `${parts.month} ${parts.day}, ${parts.hour}:${parts.minute}:${parts.second} ${parts.period}`;
 }
 
 export function formatFullTimestamp(epochSeconds: number): string {
-  return new Intl.DateTimeFormat("en", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    timeZoneName: "short",
-  }).format(new Date(epochSeconds * 1000));
+  const parts = getUtcTimestampParts(epochSeconds);
+  return `${parts.month} ${parts.day}, ${parts.year}, ${parts.hour}:${parts.minute}:${parts.second} ${parts.period} UTC`;
+}
+
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat(CONSOLE_LOCALE).format(value);
 }
 
 export function truncateId(value: string, prefixLength = 14): string {
@@ -58,4 +53,32 @@ export function formatObservedWindow(seconds: number): string {
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
   return remainingMinutes ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+}
+
+function getUtcTimestampParts(epochSeconds: number): {
+  year: number;
+  month: string;
+  day: string;
+  hour: string;
+  minute: string;
+  second: string;
+  period: "AM" | "PM";
+} {
+  const date = new Date(epochSeconds * 1000);
+  const hours24 = date.getUTCHours();
+  const hour12 = hours24 % 12 || 12;
+
+  return {
+    year: date.getUTCFullYear(),
+    month: MONTH_NAMES[date.getUTCMonth()],
+    day: pad2(date.getUTCDate()),
+    hour: pad2(hour12),
+    minute: pad2(date.getUTCMinutes()),
+    second: pad2(date.getUTCSeconds()),
+    period: hours24 >= 12 ? "PM" : "AM",
+  };
+}
+
+function pad2(value: number): string {
+  return String(value).padStart(2, "0");
 }

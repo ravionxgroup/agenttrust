@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { formatNumber } from "../../lib/format";
 
 export function MetricCard({
   label,
@@ -24,7 +25,7 @@ export function MetricCard({
         <div>
           <div className="text-sm text-slate-400">{label}</div>
           <div className="ui-metric-value mt-2 truncate" title={String(value)}>
-            {typeof value === "number" ? value.toLocaleString() : value}
+            {typeof value === "number" ? formatNumber(value) : value}
           </div>
         </div>
         <div className={`flex h-10 w-10 items-center justify-center rounded-md border ${toneClass}`}>

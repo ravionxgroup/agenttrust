@@ -29,7 +29,9 @@ from typing import Callable, Any
 
 from .identity import Issuer, AgentIdentity
 from .policy import Policy, PolicyError
-from .audit import AuditSink, AuditEvent, redact_args
+from .audit import (
+    AuditSink, AuditEvent, redact_args, MAX_AUDIT_COLLECTION, UNSAFE,
+)
 
 
 class ToolDenied(Exception):
@@ -39,7 +41,11 @@ class ToolDenied(Exception):
 def _redact_call_args(args: tuple, kwargs: dict) -> dict:
     redacted = redact_args(kwargs)
     if args:
-        redacted["_args"] = redact_args({str(i): v for i, v in enumerate(args)})
+        redacted["_args"] = (
+            redact_args({str(i): v for i, v in enumerate(args)})
+            if len(args) <= MAX_AUDIT_COLLECTION
+            else {"_sanitization": UNSAFE}
+        )
     return redacted
 
 

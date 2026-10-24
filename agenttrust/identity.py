@@ -16,13 +16,55 @@ from __future__ import annotations
 import time
 import uuid
 import fnmatch
-from dataclasses import dataclass, field, asdict
+import re
+from dataclasses import dataclass
 from typing import Optional
 
 import jwt  # PyJWT
 
 
 DEFAULT_TTL_SECONDS = 300  # 5 minutes — short-lived by design
+
+
+_IDENTIFIER = re.compile(r"[!-~]{1,256}\Z")
+_SCOPE = re.compile(r"[A-Za-z0-9_.:/?*\[\]!-]{1,256}\Z")
+
+
+def _identifier(value, claim):
+    if type(value) is not str or not _IDENTIFIER.fullmatch(value):
+        raise ValueError(f"{claim} must be a non-empty printable ASCII identifier (max 256)")
+
+
+def _scopes(value):
+    if type(value) is not list:
+        raise ValueError("scp claim must be a list of scope strings")
+    for scope in value:
+        if type(scope) is not str or not _SCOPE.fullmatch(scope):
+            raise ValueError("scp claim contains an invalid scope")
+        # Preserve fnmatch glob semantics, but reject incomplete character classes.
+        remaining = scope
+        while "[" in remaining:
+            _, remaining = remaining.split("[", 1)
+            if remaining.startswith("!"):
+                remaining = remaining[1:]
+            if remaining.startswith("]"):
+                remaining = remaining[1:]
+            if "]" not in remaining:
+                raise ValueError("scp claim contains an invalid glob")
+            _, remaining = remaining.split("]", 1)
+
+
+def _validate_claims(claims):
+    for name in ("sub", "run", "jti"):
+        _identifier(claims[name], name)
+    if "iss" in claims:
+        _identifier(claims["iss"], "iss")
+    for name in ("exp", "iat", "nbf"):
+        if name in claims and (type(claims[name]) is not int or claims[name] < 0):
+            raise ValueError(f"{name} must be a non-negative integer timestamp")
+    if claims["exp"] <= claims["iat"]:
+        raise ValueError("exp must be later than iat")
+    _scopes(claims["scp"])
 
 
 @dataclass
@@ -80,18 +122,21 @@ class Issuer:
     def issue(self, agent_id: str, scopes: list[str], ttl_seconds: int = DEFAULT_TTL_SECONDS,
               run_id: Optional[str] = None) -> tuple[str, AgentIdentity]:
         """Return (encoded_jwt, AgentIdentity) for one agent run."""
-        if ttl_seconds <= 0:
-            raise ValueError(f"ttl_seconds must be a positive integer, got {ttl_seconds!r}")
+        if type(ttl_seconds) is not int or ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be a positive integer")
+        if type(scopes) not in (list, tuple):
+            raise ValueError("scopes must be a list or tuple of scope strings")
         now = int(time.time())
         ident = AgentIdentity(
             agent_id=agent_id,
-            run_id=run_id or f"run_{uuid.uuid4().hex[:12]}",
+            run_id=f"run_{uuid.uuid4().hex[:12]}" if run_id is None else run_id,
             scopes=list(scopes),
             issuer=self.issuer_id,
             issued_at=now,
             expires_at=now + ttl_seconds,
             token_id=f"tok_{uuid.uuid4().hex}",
         )
+        _validate_claims(ident.to_claims())
         token = jwt.encode(ident.to_claims(), self._secret, algorithm=self.algorithm)
         return token, ident
 
@@ -109,6 +154,11 @@ def verify(token: str, secret: str, expected_issuer: Optional[str] = None,
     leeway (seconds) adds clock-skew tolerance on the exp/iat checks.
     """
     try:
+        if algorithms is not None and (
+            type(algorithms) is not list or not algorithms
+            or any(type(a) is not str or a.lower() == "none" for a in algorithms)
+        ):
+            raise TokenError("invalid algorithm configuration")
         claims = jwt.decode(
             token,
             secret,
@@ -118,20 +168,24 @@ def verify(token: str, secret: str, expected_issuer: Optional[str] = None,
         )
     except jwt.ExpiredSignatureError as e:
         raise TokenError("token expired") from e
-    except jwt.InvalidTokenError as e:
-        raise TokenError(f"invalid token: {e}") from e
+    except jwt.InvalidTokenError:
+        raise TokenError("invalid token") from None
+    except (TypeError, ValueError, OverflowError):
+        raise TokenError("invalid token claims") from None
 
-    if expected_issuer and claims.get("iss") != expected_issuer:
-        raise TokenError("unexpected issuer")
-
-    scopes = list(claims["scp"])
-    if not all(isinstance(s, str) for s in scopes):
-        raise TokenError("scp claim must be a list of strings")
+    try:
+        _validate_claims(claims)
+        if expected_issuer is not None:
+            _identifier(expected_issuer, "expected_issuer")
+            if claims.get("iss") != expected_issuer:
+                raise TokenError("unexpected issuer")
+    except ValueError as e:
+        raise TokenError(str(e)) from None
 
     return AgentIdentity(
         agent_id=claims["sub"],
         run_id=claims["run"],
-        scopes=scopes,
+        scopes=list(claims["scp"]),
         issuer=claims.get("iss", ""),
         issued_at=claims["iat"],
         expires_at=claims["exp"],

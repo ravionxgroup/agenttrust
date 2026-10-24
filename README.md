@@ -108,19 +108,13 @@ The Console does not participate in authorization, does not edit policy, and doe
 
 ### Screenshots
 
-No screenshot files are currently present in the repository, so this README intentionally does not include image links yet.
+![AgentTrust Run Detail showing denied restart_service request](docs/assets/screenshots/console-run-detail-denied-not-executed.png)
 
-Recommended screenshot location:
+Run Detail demonstrates a `restart_service` request denied because `service.restart` was not granted. The protected tool was not executed.
 
-```text
-docs/assets/screenshots/
-```
+![AgentTrust Console Overview](docs/assets/screenshots/console-overview.png)
 
-Recommended files to add:
-
-1. `console-run-detail-denied-not-executed.png`: Run Detail showing `restart_service` / `service.restart` denied with `scope not granted` and `NOT EXECUTED`.
-2. `console-overview.png`: Overview showing metrics, recent authorization activity, denied tools, authorization summary, and data source indicator.
-3. `console-audit-explorer.png`: optional Audit Explorer screenshot if a third image helps reviewers understand event inspection.
+Overview shows read-only authorization and audit visibility derived from AgentTrust audit events.
 
 ## Quick Start
 
@@ -226,6 +220,10 @@ npm run build
 ## Audit Events
 
 Every guarded tool call attempt writes one JSON line to `agenttrust_audit.jsonl` by default:
+
+![AgentTrust Audit Explorer](docs/assets/screenshots/console-audit-explorer.png)
+
+Audit Explorer supports event-level inspection of authorization decisions, execution outcomes, redacted arguments, and denial reasons.
 
 ```json
 {"event_id":"evt_...","ts":1234567890.1,"agent_id":"support-agent","run_id":"run_abc","token_id":"tok_xyz","tool":"get_customer","required_scope":"crm.read","decision":"allow","reason":null,"args_redacted":{"customer_id":42},"result_status":"ok"}
