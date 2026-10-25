@@ -96,6 +96,11 @@ jobs:
           python -m pip install -e ".[dev,gateway,mcp]"
           python -m pip check
           python -c 'import importlib.metadata as m; assert int(m.version("mcp").split(".")[0]) >= 2, "Independent interoperability requires MCP >= 2"'
+      - name: Console ingestion and projection tests
+        working-directory: agenttrust/console
+        run: |
+          npm ci
+          npm test --if-present
       - name: Real SDK to Gateway and independent MCP regression suite
         working-directory: agenttrust
         env:
@@ -103,11 +108,6 @@ jobs:
         run: |
           python -m pytest -q -ra --junitxml=/tmp/agenttrust-integration.xml
           python ../controller/.github/ci/check-results.py /tmp/agenttrust-integration.xml
-      - name: Console ingestion and projection tests
-        working-directory: agenttrust/console
-        run: |
-          npm ci
-          npm test --if-present
       - name: Prepare ephemeral CI-only development credentials
         working-directory: agenttrust-platform
         run: ./deploy/local/prepare-credentials.sh
