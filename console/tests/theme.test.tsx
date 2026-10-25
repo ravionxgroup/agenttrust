@@ -4,12 +4,12 @@ import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import { renderToStaticMarkup } from "react-dom/server";
 import { THEMES, resolveTheme, THEME_INIT_SCRIPT, THEME_STORAGE_KEY } from "../src/lib/theme";
-import { ThemeSelector } from "../src/components/layout/theme-selector";
+import { ThemeToggle } from "../src/components/layout/theme-toggle";
 import { EvidenceBadge } from "../src/components/tables/gateway-audit";
 
-test("theme names have a strict Midnight fallback without coercion", () => {
+test("theme names have a strict Obsidian fallback without coercion", () => {
   for (const theme of THEMES) assert.equal(resolveTheme(theme), theme);
-  for (const value of [null, undefined, "", "dark", "LIGHT", {}, ["light"], 1]) assert.equal(resolveTheme(value), "midnight");
+  for (const value of [null, undefined, "", "midnight", "dark", "LIGHT", {}, ["light"], 1]) assert.equal(resolveTheme(value), "obsidian");
 });
 
 test("fixed early initialization reads only the theme preference and handles blocked storage", () => {
@@ -21,17 +21,20 @@ test("fixed early initialization reads only the theme preference and handles blo
     };
     let selected = "";
     runInNewContext(THEME_INIT_SCRIPT, context, { timeout: 100 });
-    assert.equal(selected, stored instanceof Error ? "midnight" : resolveTheme(stored));
+    assert.equal(selected, stored instanceof Error ? "obsidian" : resolveTheme(stored));
     assert.equal(context.executed, false);
   }
 });
 
-test("theme selector has an accessible native select and deterministic server markup", () => {
-  const html = renderToStaticMarkup(<ThemeSelector />);
-  assert.match(html, /<select[^>]*aria-label="Theme"/);
+test("theme toggle has a native button, matching tooltip and deterministic server markup", () => {
+  const html = renderToStaticMarkup(<ThemeToggle />);
+  assert.match(html, /<button[^>]*type="button"/);
+  assert.match(html, /aria-label="Switch to Light theme"/);
+  assert.match(html, /title="Switch to Light theme"/);
   assert.match(html, /disabled=""/);
-  assert.match(html, /value="midnight" selected=""/);
-  for (const theme of THEMES) assert.ok(html.includes(`value="${theme}"`));
+  assert.match(html, /lucide-sun/);
+  assert.match(html, /aria-hidden="true"/);
+  assert.ok(!html.includes("<select"));
 });
 
 type RGB = number[];
