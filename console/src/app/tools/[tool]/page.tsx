@@ -28,9 +28,9 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
           <SourceIndicator source={source} />
         </div>
         <SectionCard className="p-8">
-          <TechId className="text-slate-200">{decodedToolName}</TechId>
+          <TechId className="text-foreground">{decodedToolName}</TechId>
           <p className="ui-muted mt-3">Tools are derived from audit events, not a registry.</p>
-          <Link href="/tools" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white">
+          <Link href="/tools" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
             Back to tools
           </Link>
         </SectionCard>
@@ -43,7 +43,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="ui-page-title">Tool</h2>
-          <div className="mt-2"><TechId className="text-base text-teal-100">{tool.tool}</TechId></div>
+          <div className="mt-2"><TechId className="text-base text-accent">{tool.tool}</TechId></div>
           <p className="ui-muted mt-2">Observed tool usage reconstructed from AgentTrust audit events.</p>
         </div>
         <SourceIndicator source={source} />
@@ -71,9 +71,9 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
               </thead>
               <tbody className="divide-y divide-line">
                 {tool.requiredScopes.map((scope) => (
-                  <tr key={scope.requiredScope} className="hover:bg-white/[0.03]">
-                    <td className="px-4 py-3"><TechId className="text-teal-100">{scope.requiredScope}</TechId></td>
-                    <td className="px-4 py-3 text-slate-300">{scope.calls}</td>
+                  <tr key={scope.requiredScope} className="hover:bg-hover">
+                    <td className="px-4 py-3"><TechId className="text-accent">{scope.requiredScope}</TechId></td>
+                    <td className="px-4 py-3 text-muted">{scope.calls}</td>
                   </tr>
                 ))}
               </tbody>
@@ -97,17 +97,17 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
               </thead>
               <tbody className="divide-y divide-line">
                 {tool.agents.map((agent) => (
-                  <tr key={agent.agentId} className="hover:bg-white/[0.03]">
+                  <tr key={agent.agentId} className="hover:bg-hover">
                     <td className="max-w-56 px-4 py-3">
-                      <Link href={`/agents/${encodeURIComponent(agent.agentId)}`} className="ui-clickable-id block truncate text-slate-100" title={agent.agentId}>
+                      <Link href={`/agents/${encodeURIComponent(agent.agentId)}`} className="ui-clickable-id block truncate text-foreground" title={agent.agentId}>
                         {agent.agentId}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{agent.calls}</td>
-                    <td className="px-4 py-3 text-emerald-200">{agent.allowedCalls}</td>
-                    <td className="px-4 py-3 text-rose-200">{agent.deniedCalls}</td>
-                    <td className="px-4 py-3 text-amber-200">{agent.executionErrors}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-400">{formatTimestamp(agent.lastSeen)}</td>
+                    <td className="px-4 py-3 text-muted">{agent.calls}</td>
+                    <td className="px-4 py-3 text-success">{agent.allowedCalls}</td>
+                    <td className="px-4 py-3 text-denied">{agent.deniedCalls}</td>
+                    <td className="px-4 py-3 text-failed">{agent.executionErrors}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(agent.lastSeen)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -130,20 +130,20 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
               </thead>
               <tbody className="divide-y divide-line">
                 {tool.recentRuns.map((run) => (
-                  <tr key={run.runId} className="hover:bg-white/[0.03]">
+                  <tr key={run.runId} className="hover:bg-hover">
                     <td className="max-w-56 px-4 py-3">
                       <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate" title={run.runId}>
                         {truncateId(run.runId, 18)}
                       </Link>
                     </td>
                     <td className="max-w-52 px-4 py-3">
-                      <Link href={`/agents/${encodeURIComponent(run.agentId)}`} className="ui-clickable-id block truncate text-slate-100" title={run.agentId}>
+                      <Link href={`/agents/${encodeURIComponent(run.agentId)}`} className="ui-clickable-id block truncate text-foreground" title={run.agentId}>
                         {run.agentId}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-300">{run.toolCalls}</td>
-                    <td className="px-4 py-3 text-rose-200">{run.deniedCalls}</td>
-                    <td className="px-4 py-3 text-amber-200">{run.executionErrors}</td>
+                    <td className="px-4 py-3 text-muted">{run.toolCalls}</td>
+                    <td className="px-4 py-3 text-denied">{run.deniedCalls}</td>
+                    <td className="px-4 py-3 text-failed">{run.executionErrors}</td>
                   </tr>
                 ))}
               </tbody>

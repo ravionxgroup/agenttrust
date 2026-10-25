@@ -18,23 +18,23 @@ export function ToolsSummaryTable({ tools }: { tools: ObservedToolSummary[] }) {
         </thead>
         <tbody className="divide-y divide-line">
           {tools.map((tool) => (
-            <tr key={`${tool.tool}:${tool.requiredScope}`} className="hover:bg-white/[0.03]">
+            <tr key={`${tool.tool}:${tool.requiredScope}`} className="hover:bg-hover">
               <td className="max-w-56 px-4 py-3">
-                <Link href={`/tools/${encodeURIComponent(tool.tool)}`} className="ui-clickable-id block truncate text-slate-100" title={tool.tool}>
+                <Link href={`/tools/${encodeURIComponent(tool.tool)}`} className="ui-clickable-id block truncate text-foreground" title={tool.tool}>
                   {tool.tool}
                 </Link>
               </td>
-              <td className="max-w-56 px-4 py-3"><TechId className="text-teal-100">{tool.requiredScope}</TechId></td>
-              <td className="px-4 py-3 text-slate-300">{tool.calls}</td>
-              <td className="px-4 py-3 text-emerald-200">{tool.allowedCalls}</td>
-              <td className="px-4 py-3 text-rose-200">{tool.deniedCalls}</td>
-              <td className="px-4 py-3 text-amber-200">{tool.executionErrors}</td>
+              <td className="max-w-56 px-4 py-3"><TechId className="text-accent">{tool.requiredScope}</TechId></td>
+              <td className="px-4 py-3 text-muted">{tool.calls}</td>
+              <td className="px-4 py-3 text-success">{tool.allowedCalls}</td>
+              <td className="px-4 py-3 text-denied">{tool.deniedCalls}</td>
+              <td className="px-4 py-3 text-failed">{tool.executionErrors}</td>
             </tr>
           ))}
         </tbody>
       </table>
       {tools.length === 0 ? (
-        <div className="px-4 py-12 text-center text-sm text-slate-500">No observed tools for this agent.</div>
+        <div className="px-4 py-12 text-center text-sm text-muted">No observed tools for this agent.</div>
       ) : null}
     </div>
   );

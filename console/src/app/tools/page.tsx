@@ -21,7 +21,7 @@ export default async function ToolsPage() {
       </div>
 
       <SectionCard className="mb-4 flex items-start gap-3 p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-200" aria-hidden="true" />
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
         <p className="ui-muted">Tools appear after they are referenced by audited AgentTrust calls.</p>
       </SectionCard>
 
@@ -29,7 +29,7 @@ export default async function ToolsPage() {
         <ToolsTable tools={snapshot.tools} />
       ) : (
         <SectionCard className="p-8 text-center">
-          <Hammer className="mx-auto h-8 w-8 text-slate-600" aria-hidden="true" />
+          <Hammer className="mx-auto h-8 w-8 text-muted" aria-hidden="true" />
           <h3 className="ui-section-title mt-3">No Observed Tools</h3>
           <p className="ui-muted mt-2">No audited tool activity is available from this data source.</p>
         </SectionCard>

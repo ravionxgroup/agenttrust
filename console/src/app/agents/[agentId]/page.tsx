@@ -31,9 +31,9 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
           <SourceIndicator source={source} />
         </div>
         <SectionCard className="p-8">
-          <TechId className="text-slate-200">{decodedAgentId}</TechId>
+          <TechId className="text-foreground">{decodedAgentId}</TechId>
           <p className="ui-muted mt-3">Agents are derived from audit events, not an agent registry.</p>
-          <Link href="/agents" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white">
+          <Link href="/agents" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
             Back to agents
           </Link>
         </SectionCard>
@@ -46,7 +46,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="ui-page-title">Agent</h2>
-          <div className="mt-2"><TechId className="text-base text-teal-100">{agent.agentId}</TechId></div>
+          <div className="mt-2"><TechId className="text-base text-accent">{agent.agentId}</TechId></div>
           <p className="ui-muted mt-2">Observed agent activity reconstructed from AgentTrust audit events.</p>
         </div>
         <SourceIndicator source={source} />
@@ -70,13 +70,13 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
                 <p className="ui-muted mt-1">Read-only policy declaration for this observed agent.</p>
               </div>
               <div className="text-right">
-                <div className="text-xs uppercase tracking-wider text-slate-500">Effective Token TTL</div>
-                <div className="mt-1 text-sm font-semibold text-slate-200">{declaredPolicy.effectiveTtlSeconds}s</div>
+                <div className="text-xs uppercase tracking-wider text-muted">Effective Token TTL</div>
+                <div className="mt-1 text-sm font-semibold text-foreground">{declaredPolicy.effectiveTtlSeconds}s</div>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {declaredPolicy.scopes.map((scope) => (
-                <TechId key={scope} className="rounded border border-teal-400/15 bg-teal-400/10 px-2 py-1 text-teal-100">
+                <TechId key={scope} className="rounded border border-accent/15 bg-accent/10 px-2 py-1 text-accent">
                   {scope}
                 </TechId>
               ))}
@@ -106,18 +106,18 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
               </thead>
               <tbody className="divide-y divide-line">
                 {agent.recentRuns.map((run) => (
-                  <tr key={run.runId} className="hover:bg-white/[0.03]">
+                  <tr key={run.runId} className="hover:bg-hover">
                     <td className="max-w-56 px-4 py-3">
                       <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate" title={run.runId}>
                         {truncateId(run.runId, 18)}
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-400">{formatTimestamp(run.firstObservedAt)}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-slate-400">{formatTimestamp(run.lastObservedAt)}</td>
-                    <td className="px-4 py-3 text-slate-300">{formatObservedWindow(run.observedWindowSeconds)}</td>
-                    <td className="px-4 py-3 text-slate-300">{run.toolCalls}</td>
-                    <td className="px-4 py-3 text-rose-200">{run.deniedCalls}</td>
-                    <td className="px-4 py-3 text-amber-200">{run.executionErrors}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(run.firstObservedAt)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(run.lastObservedAt)}</td>
+                    <td className="px-4 py-3 text-muted">{formatObservedWindow(run.observedWindowSeconds)}</td>
+                    <td className="px-4 py-3 text-muted">{run.toolCalls}</td>
+                    <td className="px-4 py-3 text-denied">{run.deniedCalls}</td>
+                    <td className="px-4 py-3 text-failed">{run.executionErrors}</td>
                   </tr>
                 ))}
               </tbody>

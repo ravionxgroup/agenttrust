@@ -28,9 +28,9 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
           <SourceIndicator source={source} />
         </div>
         <SectionCard className="p-8">
-          <TechId className="text-slate-200">{decodedRunId}</TechId>
+          <TechId className="text-foreground">{decodedRunId}</TechId>
           <p className="ui-muted mt-3">Runs are reconstructed from audit events, not explicit lifecycle records.</p>
-          <Link href="/runs" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white">
+          <Link href="/runs" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
             Back to runs
           </Link>
         </SectionCard>
@@ -43,10 +43,10 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="ui-page-title">Run</h2>
-          <div className="mt-2"><TechId className="text-base text-teal-100">{run.runId}</TechId></div>
+          <div className="mt-2"><TechId className="text-base text-accent">{run.runId}</TechId></div>
           <p className="ui-muted mt-2">
             Agent{" "}
-            <Link href={`/agents/${encodeURIComponent(run.agentId)}`} className="ui-clickable-id text-slate-100">
+            <Link href={`/agents/${encodeURIComponent(run.agentId)}`} className="ui-clickable-id text-foreground">
               {run.agentId}
             </Link>
           </p>
@@ -75,11 +75,11 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
           <dl className="mt-4 space-y-4">
             <Meta label="Distinct Tools" value={String(run.distinctTools)} />
             <div>
-              <dt className="text-xs uppercase tracking-wider text-slate-500">Token ID</dt>
+              <dt className="text-xs uppercase tracking-wider text-muted">Token ID</dt>
               {run.tokenId ? (
                 <dd className="mt-1"><TechId>{truncateId(run.tokenId, 18)}</TechId></dd>
               ) : (
-                <dd className="mt-1 text-sm text-amber-200">{source.kind === "gateway" ? "Token IDs omitted from the audit view" : "Multiple token IDs observed"}</dd>
+                <dd className="mt-1 text-sm text-failed">{source.kind === "gateway" ? "Token IDs omitted from the audit view" : "Multiple token IDs observed"}</dd>
               )}
             </div>
           </dl>
@@ -92,8 +92,8 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wider text-slate-500">{label}</dt>
-      <dd className="mt-1 text-sm text-slate-200">{value}</dd>
+      <dt className="text-xs uppercase tracking-wider text-muted">{label}</dt>
+      <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   );
 }
@@ -110,18 +110,18 @@ function RunSummaryCard({
   tone?: "slate" | "teal" | "rose" | "amber";
 }) {
   const toneClass = {
-    slate: "border-slate-400/20 bg-slate-400/10 text-slate-200",
-    teal: "border-teal-400/20 bg-teal-400/10 text-teal-200",
-    rose: "border-rose-400/20 bg-rose-400/10 text-rose-200",
-    amber: "border-amber-400/20 bg-amber-400/10 text-amber-200",
+    slate: "border-muted/20 bg-muted/10 text-foreground",
+    teal: "border-accent/20 bg-accent/10 text-accent",
+    rose: "border-denied/20 bg-denied/10 text-denied",
+    amber: "border-failed/20 bg-failed/10 text-failed",
   }[tone];
 
   return (
     <SectionCard className="ui-card-pad min-h-32">
       <div className="flex h-full items-center justify-between gap-4">
         <div className="min-w-0">
-          <div className="text-sm text-slate-400">{label}</div>
-          <div className="mt-2 truncate text-xl font-semibold tracking-normal text-white" title={value}>{value}</div>
+          <div className="text-sm text-muted">{label}</div>
+          <div className="mt-2 truncate text-xl font-semibold tracking-normal text-foreground" title={value}>{value}</div>
         </div>
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${toneClass}`}>
           {icon}

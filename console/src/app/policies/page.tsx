@@ -24,7 +24,7 @@ export default async function PoliciesPage() {
       </div>
 
       <SectionCard className="mb-4 flex items-start gap-3 p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-200" aria-hidden="true" />
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
         <p className="ui-muted">
           {snapshot.gateway ? "Gateway policy is not ingested. Authorization decisions shown by the Console come from persisted audit evidence; enforcement remains in the Gateway." : "This is declared local SDK configuration. It is separate from Gateway enforcement."}
         </p>
@@ -52,28 +52,28 @@ export default async function PoliciesPage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {policy.agents.map((agent) => (
-                    <tr key={agent.agentId} className="hover:bg-white/[0.03]">
+                    <tr key={agent.agentId} className="hover:bg-hover">
                       <td className="max-w-56 px-4 py-3">
                         {observedAgents.has(agent.agentId) ? (
-                          <Link href={`/agents/${encodeURIComponent(agent.agentId)}`} className="ui-clickable-id block truncate text-slate-100" title={agent.agentId}>
+                          <Link href={`/agents/${encodeURIComponent(agent.agentId)}`} className="ui-clickable-id block truncate text-foreground" title={agent.agentId}>
                             {agent.agentId}
                           </Link>
                         ) : (
-                          <TechId className="text-slate-300">{agent.agentId}</TechId>
+                          <TechId className="text-muted">{agent.agentId}</TechId>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           {agent.scopes.map((scope) => (
-                            <TechId key={scope} className="rounded border border-teal-400/15 bg-teal-400/10 px-2 py-1 text-teal-100">
+                            <TechId key={scope} className="rounded border border-accent/15 bg-accent/10 px-2 py-1 text-accent">
                               {scope}
                             </TechId>
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-slate-300">
+                      <td className="px-4 py-3 text-muted">
                         {agent.effectiveTtlSeconds}s
-                        {agent.explicitTtlSeconds ? <span className="ml-2 text-xs text-slate-500">explicit</span> : <span className="ml-2 text-xs text-slate-500">default</span>}
+                        {agent.explicitTtlSeconds ? <span className="ml-2 text-xs text-muted">explicit</span> : <span className="ml-2 text-xs text-muted">default</span>}
                       </td>
                     </tr>
                   ))}
@@ -84,7 +84,7 @@ export default async function PoliciesPage() {
         </>
       ) : (
         <SectionCard className="p-8 text-center">
-          <FileText className="mx-auto h-8 w-8 text-slate-600" aria-hidden="true" />
+          <FileText className="mx-auto h-8 w-8 text-muted" aria-hidden="true" />
           <h3 className="ui-section-title mt-3">Policy Unavailable</h3>
           <p className="ui-muted mx-auto mt-2 max-w-xl">
             {snapshot.gateway ? "Gateway mode displays audit evidence only; policy configuration is not loaded by this viewer." : <>Configure <TechId>AGENTTRUST_POLICY_PATH</TechId> with a readable AgentTrust policy YAML file to inspect declared scopes.</>}
@@ -97,10 +97,10 @@ export default async function PoliciesPage() {
 
 function PolicySourceIndicator({ source }: { source: PolicySourceInfo }) {
   return (
-    <div className="rounded-md border border-line bg-white/[0.03] px-3 py-2 text-sm text-slate-300">
-      <span className="mr-2 inline-block h-2 w-2 rounded-full bg-teal-300" aria-hidden="true" />
+    <div className="rounded-md border border-line bg-raised px-3 py-2 text-sm text-muted">
+      <span className="mr-2 inline-block h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
       {source.label}
-      {source.warningCount ? <span className="ml-2 text-amber-200">{source.warningCount} warning</span> : null}
+      {source.warningCount ? <span className="ml-2 text-failed">{source.warningCount} warning</span> : null}
     </div>
   );
 }

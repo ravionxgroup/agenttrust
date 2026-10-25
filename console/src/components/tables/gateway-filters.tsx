@@ -31,10 +31,10 @@ export function GatewayFilters({ filters, agents, tools }: {
       <Select label="Tool" name="tool" value={values.tool} values={tools} onChange={change} />
       <Select label="Authorization" name="authorization" value={values.authorization} values={["ALLOW", "DENY", "UNKNOWN"]} onChange={change} />
       <Select label="Execution" name="execution" value={values.execution} values={["SUCCEEDED", "FAILED", "NOT_EXECUTED", "UNKNOWN"]} onChange={change} />
-      <label className="text-xs text-slate-400">From (UTC)<input name="from" type="datetime-local" value={values.from} onChange={event => change("from", event.target.value)} className="focus-ring mt-1 block w-full rounded border border-line bg-[#0b1424] px-3 py-2 text-sm text-white" /></label>
-      <label className="text-xs text-slate-400">To (UTC)<input name="to" type="datetime-local" value={values.to} onChange={event => change("to", event.target.value)} className="focus-ring mt-1 block w-full rounded border border-line bg-[#0b1424] px-3 py-2 text-sm text-white" /></label>
-      <button className="rounded bg-teal-400/10 px-4 py-2 text-sm text-teal-100" type="submit">Apply filters</button>
-      <Link href="/audit" onNavigate={() => setValues({ ...emptyFilters })} className="self-center text-sm text-slate-400">Reset filters</Link>
+      <label className="text-xs text-muted">From (UTC)<input name="from" type="datetime-local" value={values.from} onChange={event => change("from", event.target.value)} className="focus-ring mt-1 block w-full rounded border border-line bg-control px-3 py-2 text-sm text-foreground" /></label>
+      <label className="text-xs text-muted">To (UTC)<input name="to" type="datetime-local" value={values.to} onChange={event => change("to", event.target.value)} className="focus-ring mt-1 block w-full rounded border border-line bg-control px-3 py-2 text-sm text-foreground" /></label>
+      <button className="rounded bg-accent/10 px-4 py-2 text-sm text-accent" type="submit">Apply filters</button>
+      <Link href="/audit" onNavigate={() => setValues({ ...emptyFilters })} className="self-center text-sm text-muted">Reset filters</Link>
     </Form>
   );
 }
@@ -46,5 +46,5 @@ function Select({ label, name, value, values, onChange }: {
   values: string[];
   onChange: (name: keyof FilterValues, value: string) => void;
 }) {
-  return <label className="text-xs text-slate-400">{label}<select aria-label={label} name={name} value={value} onChange={event => onChange(name, event.target.value)} className="focus-ring mt-1 block w-full rounded border border-line bg-[#0b1424] px-3 py-2 text-sm text-white"><option value="">All</option>{values.map(option => <option key={option} value={option}>{option.replaceAll("_", " ")}</option>)}</select></label>;
+  return <label className="text-xs text-muted">{label}<select aria-label={label} name={name} value={value} onChange={event => onChange(name, event.target.value)} className="focus-ring mt-1 block w-full rounded border border-line bg-control px-3 py-2 text-sm text-foreground"><option value="">All</option>{values.map(option => <option key={option} value={option}>{option.replaceAll("_", " ")}</option>)}</select></label>;
 }

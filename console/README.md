@@ -137,6 +137,58 @@ Gateway's enforcement boundary.
 
 ## Verification and generating real evidence
 
+### P2 appearance themes
+
+The Console supports Midnight (default), Light and Obsidian. A native **Theme**
+selector sits above the existing page content, independently of the sidebar.
+Switching changes the root `data-theme` attribute immediately without navigation.
+Only the theme name is saved under `agenttrust.console.theme.v1` in localStorage.
+Invalid preferences fall back to Midnight. If storage is unavailable, switching
+still works in the current document, but persistence is unavailable.
+
+CSS RGB custom properties in `src/app/globals.css` supply semantic Tailwind
+colors. Existing component layouts and behavior are unchanged; authorization,
+execution and integrity retain separate labels and semantic color families.
+Control borders have separate contrast tokens from decorative card separators.
+
+`src/lib/theme.ts` contains a fixed application-owned script that runs in the
+document head before the body paints. It accepts only the three supported values;
+storage contents are never interpolated into executable code. The selector
+hydrates with deterministic, initially disabled markup and then reads the root
+attribute. Only the root's intentional attribute change uses hydration-warning
+suppression. Pages and audit providers remain server-rendered. With JavaScript
+disabled, Midnight remains available and the theme selector stays disabled.
+
+**Future CSP hardening:** this initialization script requires an authorized
+script hash or per-response nonce under a restrictive `script-src`. Its current
+SHA-256 source is `sha256-HBf/QUJ4uFYD1FHTzT8Nav7gcdis6QscTVG29iZh78c=`.
+Recompute it whenever the exact script bytes change. Do not add `unsafe-inline`
+or interpolate user input to accommodate themes. Next.js runtime scripts need
+their own compatible CSP treatment; this hash alone is not a complete CSP policy.
+No CSP or security-header behavior is changed in P2.
+
+Unit tests calculate contrast from the actual CSS tokens, including 10% tinted
+semantic backgrounds: normal text/badges must meet 4.5:1, control borders and
+focus indicators 3:1. Current minimum ratios (text / badges / control borders):
+Midnight 6.04 / 5.05 / 4.48; Light 5.25 / 4.61 / 3.24;
+Obsidian 6.08 / 5.05 / 4.54. These checks are not a full accessibility certification.
+
+After `npm run build`, run theme browser checks together with P1 regressions:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+node scripts/filter-smoke.mjs --themes
+```
+
+The runner uses only its temporary UI fixture and loopback server. It checks
+three themes across existing routes, early initialization, reload/client-navigation
+persistence, keyboard focus, rendered contrast, invalid/blocked storage,
+empty/unavailable/error states and browser/hydration errors. Set
+`AGENTTRUST_THEME_EVIDENCE_DIR` to an optional local screenshot directory.
+Playwright remains externally supplied; no package dependency is added.
+
+### Existing regression checks
+
 ```bash
 npm test
 npm run typecheck

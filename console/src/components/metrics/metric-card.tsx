@@ -13,17 +13,17 @@ export function MetricCard({
   tone?: "teal" | "rose" | "amber" | "slate";
 }) {
   const toneClass = {
-    teal: "border-teal-400/20 bg-teal-400/10 text-teal-200",
-    rose: "border-rose-400/20 bg-rose-400/10 text-rose-200",
-    amber: "border-amber-400/20 bg-amber-400/10 text-amber-200",
-    slate: "border-slate-400/20 bg-slate-400/10 text-slate-200",
+    teal: "border-accent/20 bg-accent/10 text-accent",
+    rose: "border-denied/20 bg-denied/10 text-denied",
+    amber: "border-failed/20 bg-failed/10 text-failed",
+    slate: "border-muted/20 bg-muted/10 text-foreground",
   }[tone];
 
   return (
     <section className="ui-card ui-card-pad min-h-32">
       <div className="flex h-full items-center justify-between gap-4">
         <div>
-          <div className="text-sm text-slate-400">{label}</div>
+          <div className="text-sm text-muted">{label}</div>
           <div className="ui-metric-value mt-2 truncate" title={String(value)}>
             {typeof value === "number" ? formatNumber(value) : value}
           </div>

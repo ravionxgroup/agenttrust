@@ -22,12 +22,12 @@ export function AgentsTable({ agents }: { agents: AgentSummary[] }) {
       <div className="ui-card mb-4 p-4">
         <label className="relative block max-w-xl">
           <span className="sr-only">Search agents</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search agent ID"
-            className="focus-ring h-10 w-full rounded-md border border-line bg-[#0b1424] pl-9 pr-3 text-sm text-white placeholder:text-slate-600"
+            className="focus-ring h-10 w-full rounded-md border border-line bg-control pl-9 pr-3 text-sm text-foreground placeholder:text-muted"
           />
         </label>
       </div>
@@ -48,25 +48,25 @@ export function AgentsTable({ agents }: { agents: AgentSummary[] }) {
           </thead>
           <tbody className="divide-y divide-line">
             {filteredAgents.map((agent) => (
-              <tr key={agent.agentId} className="transition hover:bg-white/[0.04]">
+              <tr key={agent.agentId} className="transition hover:bg-hover">
                 <td className="max-w-56 px-4 py-3 font-medium">
-                  <Link href={`/agents/${encodeURIComponent(agent.agentId)}`} className="ui-clickable-id block truncate text-slate-100">
+                  <Link href={`/agents/${encodeURIComponent(agent.agentId)}`} className="ui-clickable-id block truncate text-foreground">
                     {agent.agentId}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-300">{agent.runsObserved}</td>
-                <td className="px-4 py-3 text-slate-300">{agent.toolCalls}</td>
-                <td className="px-4 py-3 text-emerald-200">{agent.allowedCalls}</td>
-                <td className="px-4 py-3 text-rose-200">{agent.deniedCalls}</td>
-                <td className="px-4 py-3 text-amber-200">{agent.executionErrors}</td>
-                <td className="px-4 py-3 text-slate-300">{agent.distinctTools}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-400">{formatTimestamp(agent.lastSeen)}</td>
+                <td className="px-4 py-3 text-muted">{agent.runsObserved}</td>
+                <td className="px-4 py-3 text-muted">{agent.toolCalls}</td>
+                <td className="px-4 py-3 text-success">{agent.allowedCalls}</td>
+                <td className="px-4 py-3 text-denied">{agent.deniedCalls}</td>
+                <td className="px-4 py-3 text-failed">{agent.executionErrors}</td>
+                <td className="px-4 py-3 text-muted">{agent.distinctTools}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(agent.lastSeen)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {filteredAgents.length === 0 ? (
-          <div className="px-4 py-12 text-center text-sm text-slate-500">No observed agents match the current search.</div>
+          <div className="px-4 py-12 text-center text-sm text-muted">No observed agents match the current search.</div>
         ) : null}
       </div>
     </section>

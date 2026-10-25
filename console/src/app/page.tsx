@@ -41,7 +41,7 @@ export default async function OverviewPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="ui-section-title">Recent Authorization Activity</h3>
-            <a href="/audit" className="rounded-md border border-line px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white">
+            <a href="/audit" className="rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
               View audit
             </a>
           </div>
@@ -56,40 +56,40 @@ export default async function OverviewPage() {
             <div className="mt-4 space-y-3">
               {overview.mostDeniedTools.length > 0 ? (
                 overview.mostDeniedTools.map((item) => (
-                  <div key={item.tool} className="flex items-center justify-between gap-4 rounded-md bg-white/[0.03] px-3 py-3">
-                    <TechId className="text-sm text-slate-200">{item.tool}</TechId>
-                    <span className="rounded bg-rose-400/10 px-2 py-1 text-sm font-semibold text-rose-200">{item.deniedCalls}</span>
+                  <div key={item.tool} className="flex items-center justify-between gap-4 rounded-md bg-raised px-3 py-3">
+                    <TechId className="text-sm text-foreground">{item.tool}</TechId>
+                    <span className="rounded bg-denied/10 px-2 py-1 text-sm font-semibold text-denied">{item.deniedCalls}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">No denied calls observed.</p>
+                <p className="text-sm text-muted">No denied calls observed.</p>
               )}
             </div>
           </SectionCard>
 
           <SectionCard className="ui-card-pad">
             <h3 className="ui-section-title">Authorization Summary</h3>
-            <div className="mt-4 h-3 overflow-hidden rounded bg-slate-800">
+            <div className="mt-4 h-3 overflow-hidden rounded bg-raised">
               <div className="flex h-full">
-                <div className="bg-emerald-400" style={{ width: `${allowedPct}%` }} />
-                <div className="bg-rose-400" style={{ width: `${deniedPct}%` }} />
+                <div className="bg-success" style={{ width: `${allowedPct}%` }} />
+                <div className="bg-denied" style={{ width: `${deniedPct}%` }} />
               </div>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div>
-                <dt className="text-slate-500">Allowed</dt>
-                <dd className="mt-1 font-semibold text-emerald-200">{overview.authorizationSummary.allowed}</dd>
+                <dt className="text-muted">Allowed</dt>
+                <dd className="mt-1 font-semibold text-success">{overview.authorizationSummary.allowed}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Denied</dt>
-                <dd className="mt-1 font-semibold text-rose-200">{overview.authorizationSummary.denied}</dd>
+                <dt className="text-muted">Denied</dt>
+                <dd className="mt-1 font-semibold text-denied">{overview.authorizationSummary.denied}</dd>
               </div>
             </dl>
             <div className="mt-4 border-t border-line pt-4">
               <dl className="text-sm">
                 <div>
-                  <dt className="text-slate-500">Execution Errors</dt>
-                  <dd className="mt-1 font-semibold text-amber-200">{overview.authorizationSummary.errors}</dd>
+                  <dt className="text-muted">Execution Errors</dt>
+                  <dd className="mt-1 font-semibold text-failed">{overview.authorizationSummary.errors}</dd>
                 </div>
               </dl>
             </div>

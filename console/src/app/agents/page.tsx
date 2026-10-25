@@ -21,7 +21,7 @@ export default async function AgentsPage() {
       </div>
 
       <SectionCard className="mb-4 flex items-start gap-3 p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-teal-200" aria-hidden="true" />
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
         <p className="ui-muted">Agents appear after they generate audited tool activity.</p>
       </SectionCard>
 
@@ -29,7 +29,7 @@ export default async function AgentsPage() {
         <AgentsTable agents={snapshot.agents} />
       ) : (
         <SectionCard className="p-8 text-center">
-          <ListChecks className="mx-auto h-8 w-8 text-slate-600" aria-hidden="true" />
+          <ListChecks className="mx-auto h-8 w-8 text-muted" aria-hidden="true" />
           <h3 className="ui-section-title mt-3">No Observed Agents</h3>
           <p className="ui-muted mt-2">No audited tool activity is available from this data source.</p>
         </SectionCard>

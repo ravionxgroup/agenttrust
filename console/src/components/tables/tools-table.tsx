@@ -24,12 +24,12 @@ export function ToolsTable({ tools }: { tools: ToolSummary[] }) {
       <div className="ui-card mb-4 p-4">
         <label className="relative block max-w-xl">
           <span className="sr-only">Search tools</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search tool or scope"
-            className="focus-ring h-10 w-full rounded-md border border-line bg-[#0b1424] pl-9 pr-3 text-sm text-white placeholder:text-slate-600"
+            className="focus-ring h-10 w-full rounded-md border border-line bg-control pl-9 pr-3 text-sm text-foreground placeholder:text-muted"
           />
         </label>
       </div>
@@ -51,28 +51,28 @@ export function ToolsTable({ tools }: { tools: ToolSummary[] }) {
           </thead>
           <tbody className="divide-y divide-line">
             {filteredTools.map((tool) => (
-              <tr key={tool.tool} className="transition hover:bg-white/[0.04]">
+              <tr key={tool.tool} className="transition hover:bg-hover">
                 <td className="max-w-56 px-4 py-3">
-                  <Link href={`/tools/${encodeURIComponent(tool.tool)}`} className="ui-clickable-id block truncate text-slate-100" title={tool.tool}>
+                  <Link href={`/tools/${encodeURIComponent(tool.tool)}`} className="ui-clickable-id block truncate text-foreground" title={tool.tool}>
                     {tool.tool}
                   </Link>
                 </td>
                 <td className="max-w-64 px-4 py-3">
                   <ScopeSummary tool={tool} />
                 </td>
-                <td className="px-4 py-3 text-slate-300">{tool.agentsObserved}</td>
-                <td className="px-4 py-3 text-slate-300">{tool.runsObserved}</td>
-                <td className="px-4 py-3 text-slate-300">{tool.calls}</td>
-                <td className="px-4 py-3 text-emerald-200">{tool.allowedCalls}</td>
-                <td className="px-4 py-3 text-rose-200">{tool.deniedCalls}</td>
-                <td className="px-4 py-3 text-amber-200">{tool.executionErrors}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-400">{formatTimestamp(tool.lastSeen)}</td>
+                <td className="px-4 py-3 text-muted">{tool.agentsObserved}</td>
+                <td className="px-4 py-3 text-muted">{tool.runsObserved}</td>
+                <td className="px-4 py-3 text-muted">{tool.calls}</td>
+                <td className="px-4 py-3 text-success">{tool.allowedCalls}</td>
+                <td className="px-4 py-3 text-denied">{tool.deniedCalls}</td>
+                <td className="px-4 py-3 text-failed">{tool.executionErrors}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(tool.lastSeen)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {filteredTools.length === 0 ? (
-          <div className="px-4 py-12 text-center text-sm text-slate-500">No observed tools match the current search.</div>
+          <div className="px-4 py-12 text-center text-sm text-muted">No observed tools match the current search.</div>
         ) : null}
       </div>
     </section>
@@ -82,14 +82,14 @@ export function ToolsTable({ tools }: { tools: ToolSummary[] }) {
 function ScopeSummary({ tool }: { tool: ToolSummary }) {
   const [first, ...rest] = tool.requiredScopes;
   if (!first) {
-    return <span className="text-slate-500">None observed</span>;
+    return <span className="text-muted">None observed</span>;
   }
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <TechId className="text-teal-100">{first.requiredScope}</TechId>
+      <TechId className="text-accent">{first.requiredScope}</TechId>
       {rest.length > 0 ? (
-        <span className="shrink-0 rounded bg-white/[0.04] px-2 py-1 text-xs font-medium text-slate-400">
+        <span className="shrink-0 rounded bg-raised px-2 py-1 text-xs font-medium text-muted">
           +{rest.length}
         </span>
       ) : null}

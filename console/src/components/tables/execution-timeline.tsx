@@ -7,7 +7,7 @@ import { TechId } from "../badges/tech-id";
 export function ExecutionTimeline({ events }: { events: AuditEvent[] }) {
   if (events.length === 0) {
     return (
-      <div className="ui-card p-8 text-center text-sm text-slate-500">
+      <div className="ui-card p-8 text-center text-sm text-muted">
         No audit events were observed for this run.
       </div>
     );
@@ -26,19 +26,19 @@ export function ExecutionTimeline({ events }: { events: AuditEvent[] }) {
               <div
                 className={[
                   "absolute left-0 top-1 h-3 w-3 rounded-full ring-4",
-                  denied ? "bg-rose-300 ring-rose-400/15" : errored ? "bg-amber-300 ring-amber-300/15" : event.resultStatus === "ok" ? "bg-emerald-300 ring-emerald-400/15" : "bg-slate-300 ring-slate-400/15",
+                  denied ? "bg-denied ring-denied/15" : errored ? "bg-failed ring-failed/15" : event.resultStatus === "ok" ? "bg-success ring-success/15" : "bg-muted ring-muted/15",
                 ].join(" ")}
                 aria-hidden="true"
               />
               {!isLast ? <div className="absolute bottom-[-1.25rem] left-1.5 top-5 w-px bg-line" aria-hidden="true" /> : null}
-              <div className="rounded-lg border border-line bg-white/[0.025] p-4">
+              <div className="rounded-lg border border-line bg-raised p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-xs uppercase tracking-wider text-slate-500">{formatFullTimestamp(event.ts)}</div>
+                    <div className="text-xs uppercase tracking-wider text-muted">{formatFullTimestamp(event.ts)}</div>
                     <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
-                      <TechId className="text-sm text-slate-100">{event.tool}</TechId>
-                      <span className="text-slate-600">/</span>
-                      <TechId className="text-teal-100">{event.requiredScope}</TechId>
+                      <TechId className="text-sm text-foreground">{event.tool}</TechId>
+                      <span className="text-muted">/</span>
+                      <TechId className="text-accent">{event.requiredScope}</TechId>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -48,13 +48,13 @@ export function ExecutionTimeline({ events }: { events: AuditEvent[] }) {
                 </div>
 
                 {denied ? (
-                  <div className="mt-4 rounded-md border border-rose-400/20 bg-rose-400/10 px-3 py-2">
-                    <div className="text-sm font-medium text-rose-100">{event.reason ?? "Authorization denied"}</div>
-                    <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-rose-200">Tool not executed</div>
+                  <div className="mt-4 rounded-md border border-denied/20 bg-denied/10 px-3 py-2">
+                    <div className="text-sm font-medium text-denied">{event.reason ?? "Authorization denied"}</div>
+                    <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-denied">Tool not executed</div>
                   </div>
                 ) : errored ? (
-                  <div className="mt-4 rounded-md border border-amber-300/20 bg-amber-300/10 px-3 py-2">
-                    <div className="text-sm font-medium text-amber-100">Authorization succeeded; execution returned an error.</div>
+                  <div className="mt-4 rounded-md border border-failed/20 bg-failed/10 px-3 py-2">
+                    <div className="text-sm font-medium text-failed">Authorization succeeded; execution returned an error.</div>
                   </div>
                 ) : null}
               </div>

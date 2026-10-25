@@ -164,6 +164,10 @@ try {
   assert.ok((await native.locator("body").innerText()).includes("230 matching invocations"));
   await native.close();
   console.log("PASS: native GET filtering and reset with JavaScript disabled");
+  if (process.argv.includes("--themes")) {
+    const { verifyThemes } = await import("./theme-smoke.mjs");
+    await verifyThemes(browser, base, audit);
+  }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");
 } finally {
