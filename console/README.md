@@ -146,7 +146,8 @@ npm run build
 The Node test runner uses the existing TypeScript compiler; no added test dependency.
 No ESLint/formatter command is configured in this package.
 
-From the `agenttrust/` root, with its existing Python development environment and
+Install Console dependencies with `npm ci` first: the projection CLI imports the
+lockfile's TypeScript compiler. From the `agenttrust/` root, with its Python development environment and
 Go available, run the real SDK → Gateway → HTTP/MCP fixture and Console reader:
 
 ```bash

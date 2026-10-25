@@ -4,9 +4,20 @@
 
 Least-privilege identity, scoped authorization, and audit visibility for AI agent tool calls.
 
-AgentTrust is an SDK-first security layer for cooperative first-party agent code. Each agent run receives a short-lived, scoped identity. Every guarded tool call is authorized before execution, denied by default when scope is missing, and recorded to a local JSONL audit trail. The Security Console provides read-only visibility into that audit and policy data.
+AgentTrust combines a Python SDK, a separately maintained Go enforcement Gateway,
+and a read-only Next.js Console. Gateway mode routes HTTP/MCP tool requests through
+signature validation, exact-scope authorization, bounded execution and persisted
+audit lifecycle events. Existing local SDK guards remain available.
 
-> **Current boundary.** AgentTrust currently enforces in-process through the Python SDK. It is useful for least-privilege discipline, auditability, and integration evidence, but it is not a hard security gateway. Non-cooperative or adversarial code running outside the SDK can bypass these guards.
+> **Two explicit modes.** Local SDK guards are cooperative and can be bypassed by
+> code holding a direct tool client. Gateway mode uses externally issued Ed25519
+> credentials and an independent enforcement boundary. Preventing other network
+> paths requires the verified local Docker topology; this is not a universal
+> isolation or production-readiness claim.
+
+Read the [MVP overview and limitations](docs/mvp-overview.md) and
+[Gateway SDK guide](docs/gateway-sdk.md). The full local stack requires authorized
+access to the separate Gateway repository.
 
 ## Why AgentTrust
 
@@ -22,7 +33,15 @@ Agent frameworks make it easy to give autonomous workflows broad, long-lived too
 
 ## How It Works
 
-Conceptual flow:
+Gateway mode:
+
+```text
+AI Agent -> Python SDK -> TLS Go Gateway -> Protected HTTP/MCP Tool
+                              |
+                       Persisted audit -> Read-only Console
+```
+
+Local SDK mode (the standalone examples below):
 
 ```text
 AI Agent / Framework
@@ -54,16 +73,20 @@ Agent requests tool
 
 ## Core Capabilities
 
-- **Per-run identity:** `start_run()` issues a short-lived JWT identity with `agent_id`, `run_id`, scopes, issuer, timestamps, and `token_id`.
+- **Per-run identity:** local `start_run()` issues HS256 identities; Gateway mode accepts externally issued Ed25519 JWTs without an SDK signing key.
+- **Gateway execution:** explicit sync/async clients and LangChain/MCP adapters route protected calls through the Gateway without retry or local fallback.
 - **Scoped authorization:** each guarded call declares the required scope for that tool operation.
 - **Deny by default:** unknown agents and out-of-scope calls fail closed.
 - **Authorize before execution:** denied calls do not invoke the wrapped tool.
 - **Audit trail:** each call attempt writes an audit event with decision, reason, redacted arguments, and execution result when applicable.
 - **MCP integration:** MCP client/session wrappers authorize MCP tool calls with explicit or metadata-provided scopes.
 - **LangChain integration:** helpers expose guarded callables as LangChain tools.
-- **Security Console:** a self-contained Next.js console renders read-only audit and policy visibility.
+- **Security Console:** projects persisted Gateway events by invocation ID, keeping authorization, execution and incomplete/conflicting evidence separate; legacy SDK/fixture views are explicit modes.
 
 ## Architecture
+
+This diagram describes local SDK mode. Gateway mode and its independent trust
+boundary are described in the [MVP overview](docs/mvp-overview.md).
 
 ```mermaid
 flowchart TD
@@ -101,10 +124,12 @@ The AgentTrust Security Console is a local, read-only Next.js application in [co
 
 The Console separates data sources deliberately:
 
-- **Observed data:** Agents, Runs, Audit, and Tools are reconstructed from audit events.
-- **Declared data:** Policies are loaded from AgentTrust policy YAML or demo policy fixtures.
+- **Gateway mode (default):** invocations and timelines are projected from explicitly configured persisted Gateway JSONL; unavailable sources show an error.
+- **Legacy SDK mode:** SDK events and optional policy data use a separate schema.
+- **Fixture mode:** explicitly selected demo data; never a fallback after real ingestion fails.
 
-The Console does not participate in authorization, does not edit policy, and does not expand the SDK's enforcement boundary. Enforcement remains in the in-process AgentTrust SDK.
+The Console never executes tools, edits audit records, grants permissions or
+issues credentials. Enforcement stays in the selected local SDK or Gateway mode.
 
 ### Screenshots
 
@@ -185,30 +210,39 @@ Install and run the Console:
 
 ```bash
 cd console
-npm install
-npm run dev
+npm ci
+AGENTTRUST_CONSOLE_SOURCE=gateway AGENTTRUST_GATEWAY_AUDIT_PATH=/absolute/physical/path/gateway-audit.jsonl npm run dev -- --hostname 127.0.0.1
 ```
 
-By default, the Console uses demo audit and policy fixtures.
-
-Use a local audit file:
+The default source is Gateway audit. Missing configuration or files produce an
+explicit unavailable state. To select demo fixtures:
 
 ```bash
-AGENTTRUST_AUDIT_PATH=../agenttrust_audit.jsonl npm run dev
+AGENTTRUST_CONSOLE_SOURCE=fixtures npm run dev -- --hostname 127.0.0.1
 ```
 
-Use a local policy file:
+Use the legacy local SDK audit format explicitly:
 
 ```bash
-AGENTTRUST_POLICY_PATH=../policy.example.yaml npm run dev
+AGENTTRUST_CONSOLE_SOURCE=sdk AGENTTRUST_AUDIT_PATH=../agenttrust_audit.jsonl npm run dev -- --hostname 127.0.0.1
 ```
 
-Use both:
+Optional policy display is for legacy SDK mode:
+
+```bash
+AGENTTRUST_CONSOLE_SOURCE=sdk AGENTTRUST_POLICY_PATH=../policy.example.yaml npm run dev -- --hostname 127.0.0.1
+```
+
+Use both in legacy SDK mode (set the mode explicitly in this shell):
+
+```bash
+export AGENTTRUST_CONSOLE_SOURCE=sdk
+```
 
 ```bash
 AGENTTRUST_AUDIT_PATH=../agenttrust_audit.jsonl \
 AGENTTRUST_POLICY_PATH=../policy.example.yaml \
-npm run dev
+npm run dev -- --hostname 127.0.0.1
 ```
 
 Build the Console:
@@ -219,7 +253,9 @@ npm run build
 
 ## Audit Events
 
-Every guarded tool call attempt writes one JSON line to `agenttrust_audit.jsonl` by default:
+In local SDK mode, each guarded call attempt writes one JSON line to
+`agenttrust_audit.jsonl` by default. Gateway mode instead persists multiple
+lifecycle events per invocation; the Console counts invocation IDs, not rows.
 
 ![AgentTrust Audit Explorer](docs/assets/screenshots/console-audit-explorer.png)
 
@@ -280,11 +316,11 @@ def get_customer(customer_id: int) -> dict:
 
 ## Boundaries And Limitations
 
-- Current enforcement is in-process SDK enforcement.
+- Local SDK guards are in-process; Gateway mode uses independent authorization plus deployment isolation.
 - The Console is read-only and has no authentication or RBAC.
 - Local JSONL audit is append-only-style by convention, not immutable or tamper-proof storage.
-- AgentTrust does not currently provide a hard security gateway, managed control plane, centralized policy service, distributed enforcement system, production SaaS, or security findings/risk engine.
-- Tokens currently use HS256 shared-secret signing. Asymmetric signing and key rotation are future work.
+- There is no managed control plane, centralized policy service, distributed enforcement system, production SaaS, or security findings/risk engine.
+- Local tokens use HS256. Gateway mode accepts externally issued Ed25519 JWTs; managed issuance, rotation, JWKS and revocation are not implemented.
 - Run timing in the Console uses first and last observed audit events, not explicit run lifecycle records.
 
 ## Repository Navigation
@@ -306,8 +342,7 @@ def get_customer(customer_id: int) -> dict:
 
 Future work remains intentionally outside this SDK-first milestone:
 
-- gateway or sidecar enforcement
-- asymmetric signing and key rotation
+- managed identity provisioning, key rotation and revocation
 - centralized audit storage and SIEM export
 - managed policy/control plane
 

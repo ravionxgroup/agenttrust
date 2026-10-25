@@ -1,14 +1,14 @@
 # Threat Model & Trust Boundary
 
-AgentTrust is an SDK-level authorization layer for cooperative agent and tool
+In local mode, AgentTrust is an SDK-level authorization layer for cooperative agent and tool
 code. It provides meaningful least-privilege enforcement for calls routed
 through the AgentTrust execution path, but it is not process isolation and it
 does not prevent bypass by code that directly holds the underlying tool,
 client, shell, database, or MCP session.
 
-This document describes the current SDK-first implementation. Future gateway,
-control-plane, and durable-audit ideas are intentionally treated as future
-hardening, not current security properties.
+This document describes **local SDK mode**. Its in-process limitations remain
+valid. Gateway mode is implemented separately; see [the Gateway SDK guide](gateway-sdk.md)
+and [MVP boundaries](mvp-overview.md). The models must not be conflated.
 
 ## System And Trust Model
 
@@ -216,8 +216,8 @@ The current SDK-first implementation does not provide:
 
 Potential future hardening directions include:
 
-- out-of-process enforcement gateway
-- asymmetric credentials and key rotation
+- production hardening of the separately implemented Gateway deployment
+- managed credentials, key rotation and revocation
 - durable or tamper-evident audit backend
 - explicit token revocation
 - centralized policy and control plane
