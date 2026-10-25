@@ -106,6 +106,42 @@ test("dashboard counts invocations once, distinguishes unknown/failed/incomplete
   assert.equal(formatResult(null, "allow"), "UNKNOWN");
 });
 
+test("Gateway filter form renders URL-applied values and submits GET without the old page", () => {
+  const snapshot = parse(normal("FAILED"));
+  const params = { agent: "agent", tool: "status", authorization: "ALLOW", execution: "FAILED", from: "2026-10-24T11:59", to: "2026-10-24T12:01", page: "2" };
+  const html = renderToStaticMarkup(<GatewayExplorer snapshot={snapshot} source={{ kind: "gateway", label: "test", status: "ready" }} params={params} />);
+  const form = html.match(/<form\b[\s\S]*?<\/form>/)?.[0] ?? "";
+  assert.match(form, /action="\/audit"/);
+  // Next Form with a string action uses GET, including its native fallback.
+  assert.ok(!/method="post"/i.test(form));
+  assert.ok(!form.includes('name="page"'));
+  for (const value of ["agent", "status", "ALLOW", "FAILED"]) assert.ok(form.includes(`value="${value}" selected=""`));
+  for (const name of ["from", "to"]) assert.ok(form.includes(`value="${params[name as "from" | "to"]}"`));
+  assert.match(form, /href="\/audit"[^>]*>Reset filters/);
+});
+
+test("Gateway pagination preserves every applied filter and slices invocation rows", () => {
+  const snapshot = parse(Array.from({ length: 205 }, (_, index) => normal("SUCCEEDED", (index + 1).toString(16).padStart(32, "0"))).flat());
+  const params = { agent: "agent", tool: "status", authorization: "ALLOW", execution: "SUCCEEDED", from: "2026-10-24T11:59", to: "2026-10-24T12:01", page: "2" };
+  const html = renderToStaticMarkup(<GatewayExplorer snapshot={snapshot} source={{ kind: "gateway", label: "test", status: "ready" }} params={params} />);
+  assert.ok(html.includes("205 matching invocations · page 2"));
+  assert.equal((html.match(/<tbody\b[^>]*>[\s\S]*?<\/tbody>/)?.[0].match(/<tr\b/g) ?? []).length, 100);
+  const links = [...html.matchAll(/href="([^\"]+)"[^>]*>(Previous|Next)<\/a>/g)];
+  assert.equal(links.length, 2);
+  for (const [index, link] of links.entries()) {
+    const url = new URL(link[1].replaceAll("&amp;", "&"), "http://localhost");
+    for (const [name, value] of Object.entries(params)) if (name !== "page") assert.equal(url.searchParams.get(name), value);
+    assert.equal(url.searchParams.get("page"), index === 0 ? "1" : "3");
+  }
+});
+
+test("unfiltered Gateway form renders all dropdowns at All and empty date fields", () => {
+  const html = renderToStaticMarkup(<GatewayExplorer snapshot={parse(normal())} source={{ kind: "gateway", label: "test", status: "ready" }} params={{}} />);
+  assert.equal((html.match(/<option value="" selected="">All<\/option>/g) ?? []).length, 4);
+  assert.equal((html.match(/type="datetime-local"[^>]*value=""/g) ?? []).length, 2);
+  assert.ok(html.includes("1 matching invocations · page 1"));
+});
+
 test("secure file ingestion: valid, missing, unreadable, oversize, symlinks, directories and excessive records", async () => {
   const directory = await realpath(await mkdtemp(path.join(tmpdir(), "t07-ingest-")));
   try {

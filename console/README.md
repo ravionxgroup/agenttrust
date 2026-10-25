@@ -146,6 +146,21 @@ npm run build
 The Node test runner uses the existing TypeScript compiler; no added test dependency.
 No ESLint/formatter command is configured in this package.
 
+For the P1 Gateway filter regression, build the Console first and provide the
+same external Playwright setup used by the smoke runner below:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+node scripts/filter-smoke.mjs
+```
+
+Optionally set `AGENTTRUST_BROWSER_EXECUTABLE` to an existing Chromium executable.
+This runner starts its own loopback-only production server on a temporary port,
+uses synthetic UI-only audit records in a temporary directory, and cleans both
+up afterward. It tests controlled values, Authorization/Tool/combined/date filters,
+Reset (including unapplied edits at `/audit`), pagination and Back/Forward. It is
+not real Gateway interoperability evidence and never edits Gateway audit storage.
+
 Install Console dependencies with `npm ci` first: the projection CLI imports the
 lockfile's TypeScript compiler. From the `agenttrust/` root, with its Python development environment and
 Go available, run the real SDK → Gateway → HTTP/MCP fixture and Console reader:

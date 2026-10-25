@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, CircleSlash, ListChecks, TerminalSquare } from
 import { MetricCard } from "../metrics/metric-card";
 import { SourceIndicator } from "../metrics/source-indicator";
 import { SectionCard } from "../layout/section-card";
+import { GatewayFilters } from "./gateway-filters";
 import type { DataSourceInfo } from "../../lib/domain";
 import { filterInvocations, type GatewaySnapshot, type Invocation, type InvocationFilters } from "../../lib/gateway/model";
 
@@ -69,23 +70,14 @@ export function GatewayExplorer({ snapshot, source, params }: { snapshot: Gatewa
   const href = (target: number) => { const search = new URLSearchParams(); for (const [key, value] of Object.entries(filters)) if (value) search.set(key, value); search.set("page", String(target)); return `/audit?${search}`; };
   return <div className="px-6 py-6 lg:px-8"><header className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="ui-page-title">Gateway audit explorer</h2><p className="ui-muted mt-1">One row per invocation; open a row for original event metadata and timeline.</p></div><SourceIndicator source={source} /></header>
     {source.status !== "ready" ? <SourceFailure source={source} /> : <>
-      <form action="/audit" method="get" className="ui-card mb-4 grid gap-3 p-4 md:grid-cols-3">
-        <Select label="Agent" name="agent" value={filters.agent ?? ""} values={[...new Set(snapshot.invocations.map(i => i.agentId).filter(Boolean))].sort()} />
-        <Select label="Tool" name="tool" value={filters.tool ?? ""} values={[...new Set(snapshot.invocations.map(i => i.tool).filter(Boolean))].sort()} />
-        <Select label="Authorization" name="authorization" value={filters.authorization ?? ""} values={["ALLOW", "DENY", "UNKNOWN"]} />
-        <Select label="Execution" name="execution" value={filters.execution ?? ""} values={["SUCCEEDED", "FAILED", "NOT_EXECUTED", "UNKNOWN"]} />
-        <label className="text-xs text-slate-400">From (UTC)<input name="from" type="datetime-local" defaultValue={filters.from} className="focus-ring mt-1 block w-full rounded border border-line bg-[#0b1424] px-3 py-2 text-sm text-white" /></label>
-        <label className="text-xs text-slate-400">To (UTC)<input name="to" type="datetime-local" defaultValue={filters.to} className="focus-ring mt-1 block w-full rounded border border-line bg-[#0b1424] px-3 py-2 text-sm text-white" /></label>
-        <button className="rounded bg-teal-400/10 px-4 py-2 text-sm text-teal-100" type="submit">Apply filters</button><Link href="/audit" className="self-center text-sm text-slate-400">Reset filters</Link>
-      </form>
+      <GatewayFilters key={JSON.stringify([filters, page])} filters={filters}
+        agents={[...new Set(snapshot.invocations.map(i => i.agentId).filter(Boolean))].sort()}
+        tools={[...new Set(snapshot.invocations.map(i => i.tool).filter(Boolean))].sort()} />
       <p className="ui-muted mb-3">{filtered.length} matching invocations · page {page}. Filters do not change lifecycle correlation.</p>
       <InvocationTable invocations={filtered.slice((page - 1) * pageSize, page * pageSize)} />
       <nav aria-label="Invocation pages" className="mt-4 flex gap-4 text-sm text-teal-200">{page > 1 && <Link href={href(page - 1)}>Previous</Link>}{page * pageSize < filtered.length && <Link href={href(page + 1)}>Next</Link>}</nav>
     </>}
   </div>;
-}
-function Select({ label, name, value, values }: { label: string; name: string; value: string; values: string[] }) {
-  return <label className="text-xs text-slate-400">{label}<select aria-label={label} name={name} defaultValue={value} className="focus-ring mt-1 block w-full rounded border border-line bg-[#0b1424] px-3 py-2 text-sm text-white"><option value="">All</option>{values.map(option => <option key={option} value={option}>{option.replaceAll("_", " ")}</option>)}</select></label>;
 }
 export function InvocationDetail({ invocation, page = 1 }: { invocation: Invocation; page?: number }) {
   const events = invocation.events.slice((page - 1) * 100, page * 100);
