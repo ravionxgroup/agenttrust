@@ -18,7 +18,7 @@ export default async function PoliciesPage() {
     <div className="px-6 py-6 lg:px-8">
       <div className="ui-page-header">
         <div>
-          <h2 className="ui-page-title">Policies</h2>
+          <h1 className="ui-page-title">Policies</h1>
           <p className="ui-muted mt-1">Read-only view of AgentTrust agent scope policy.</p>
         </div>
         <PolicySourceIndicator source={policySource} />
@@ -41,7 +41,7 @@ export default async function PoliciesPage() {
           </div>
 
           <section className="mt-6">
-            <h3 className="ui-section-title mb-3">Agent Policies</h3>
+            <h2 className="ui-section-title mb-3">Agent Policies</h2>
             <SectionCard className="ui-table-scroll" role="region" aria-label="Declared local policy" tabIndex={0}>
               <table className="ui-table min-w-[780px]">
                 <thead className="ui-table-header">
@@ -86,7 +86,7 @@ export default async function PoliciesPage() {
       ) : (
         <SectionCard><StateMessage icon={FileText} title="Policy Unavailable">
           <p>
-            {snapshot.gateway ? "Gateway mode displays audit evidence only; policy configuration is not loaded by this viewer." : <>Configure <TechId>AGENTTRUST_POLICY_PATH</TechId> with a readable AgentTrust policy YAML file to inspect declared scopes.</>}
+            {snapshot.gateway ? "Gateway mode displays audit evidence only; policy configuration is not loaded by this viewer." : <>Configure <TechId opaque>AGENTTRUST_POLICY_PATH</TechId> with a readable AgentTrust policy YAML file to inspect declared scopes.</>}
           </p>
         </StateMessage></SectionCard>
       )}

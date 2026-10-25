@@ -49,7 +49,7 @@ export async function verifyComponents(browser, base, audit, phase = "after") {
       assert.equal(await values.count(), 8);
       const cards = [];
       for (const [label, value] of Object.entries(expected)) {
-        const card = page.getByText(label, { exact: true }).locator("xpath=ancestor::section[1]");
+        const card = page.locator(".ui-metric-card").filter({ has: page.getByText(label, { exact: true }) });
         assert.equal(await card.locator(".ui-metric-value").innerText(), value);
         cards.push(await card.evaluate(el => {
           const rect = el.getBoundingClientRect();
@@ -62,13 +62,13 @@ export async function verifyComponents(browser, base, audit, phase = "after") {
       assert.equal(new Set(cards.map(card => card.y)).size, 2);
       if (phase === "after") {
         for (const card of cards) {
-          assert.ok(card.height >= 76 && card.height <= 84, `compact height: ${card.height}`);
+          assert.ok(card.height >= 96 && card.height <= 120, `compact height: ${card.height}`);
           assert.equal(card.numerals, "tabular-nums");
           assert.ok(parseFloat(card.fontSize) >= 26 && parseFloat(card.fontSize) <= 30);
         }
       }
       report[theme] = { values: expected, cards, valueBoxes: await values.evaluateAll(elements => elements.map(el => ({ clientHeight: el.clientHeight, scrollHeight: el.scrollHeight, overflowY: getComputedStyle(el).overflowY }))) };
-      await page.screenshot({ path: path.join(directory, `overview-${phase}-${theme}.png`) });
+      if (process.env.AGENTTRUST_SMOKE_SCREENSHOTS !== "0") await page.screenshot({ path: path.join(directory, `overview-${phase}-${theme}.png`) });
       await overflow();
       if (phase === "before") continue;
 
@@ -100,18 +100,18 @@ export async function verifyComponents(browser, base, audit, phase = "after") {
       const first = page.getByText("First Observed Event", { exact: true }).locator("xpath=ancestor::section[1]");
       assert.equal(await first.evaluate(el => [...el.querySelectorAll("div")].some(child => child.title && getComputedStyle(child).textOverflow === "ellipsis")), false);
       assert.ok(await first.evaluate(el => [...el.querySelectorAll("div")].filter(child => child.title).every(child => child.scrollWidth <= child.clientWidth + 1)));
-      await page.screenshot({ path: path.join(directory, `run-${theme}.png`) });
+      if (process.env.AGENTTRUST_SMOKE_SCREENSHOTS !== "0") await page.screenshot({ path: path.join(directory, `run-${theme}.png`) });
       await page.goto(base + "/invocations/00000000000000000000000000000005");
       await page.getByRole("heading", { name: "Invocation details", exact: true }).waitFor();
       assert.equal(await page.getByText("FAILED", { exact: true }).first().isVisible(), true);
-      await page.screenshot({ path: path.join(directory, `invocation-${theme}.png`) });
+      if (process.env.AGENTTRUST_SMOKE_SCREENSHOTS !== "0") await page.screenshot({ path: path.join(directory, `invocation-${theme}.png`) });
       await page.goto(base + "/policies");
       await page.getByRole("heading", { name: "Policy Unavailable", exact: true }).waitFor();
       assert.equal(await page.getByText("Gateway policy is not ingested", { exact: true }).isVisible(), true);
       assert.equal(await page.getByText("Gateway mode displays audit evidence only; policy configuration is not loaded by this viewer.", { exact: true }).isVisible(), true);
       const indicator = page.getByText("Gateway policy is not ingested", { exact: true }).locator("..");
       assert.equal(await indicator.locator(".text-accent,.text-success,.bg-accent,.bg-success").count(), 0);
-      await page.screenshot({ path: path.join(directory, `policies-${theme}.png`) });
+      if (process.env.AGENTTRUST_SMOKE_SCREENSHOTS !== "0") await page.screenshot({ path: path.join(directory, `policies-${theme}.png`) });
     }
     if (phase === "after") {
       // The same source states stay distinct from successful zero metrics.

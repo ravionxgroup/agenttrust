@@ -6,7 +6,9 @@ import { spawnSync } from "node:child_process";
 
 const output = mkdtempSync(path.join(tmpdir(), "agenttrust-console-tests-"));
 try {
-  const files = readdirSync("tests").filter(name => /\.test\.tsx?$/.test(name)).map(name => path.resolve("tests", name));
+  const selection = process.argv.slice(2);
+  const files = readdirSync("tests").filter(name => /\.test\.tsx?$/.test(name) && (!selection.length || selection.includes(name))).map(name => path.resolve("tests", name));
+  if (!files.length || (selection.length && files.length !== selection.length)) throw new Error("Unknown or duplicate test file selection");
   const program = ts.createProgram(files, { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS,
     moduleResolution: ts.ModuleResolutionKind.Node10, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,
     strict: true, skipLibCheck: true, outDir: output, rootDir: process.cwd() });

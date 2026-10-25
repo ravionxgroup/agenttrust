@@ -194,44 +194,33 @@ empty/unavailable/error states and browser/hydration errors. Set
 `AGENTTRUST_THEME_EVIDENCE_DIR` to an optional local screenshot directory.
 Playwright remains externally supplied; no package dependency is added.
 
-### P3-A horizontal navigation
+### Navigation (V2)
 
-The server-rendered header has a 64px branding row and a 48px horizontal
-navigation row. The existing Sun/Moon toggle remains in the branding row.
-The six destinations are unchanged. At widths of 640px and above all links are
-visible; smaller viewports use a native Navigation button and a two-column disclosure.
-This is ordinary link navigation, not an ARIA menu or modal drawer.
+Desktop uses one 72px row with branding, the six existing destinations and the
+Sun/Moon toggle. The product subtitle is visible when space permits. At widths
+below 1024px, a native button opens a two-column link disclosure below the header.
+It supports Enter/Space, Escape, outside click and focus-aware resizing. There is
+no modal focus trap or new navigation destination. Detail pages highlight their
+parent section without claiming that the parent link is the current page.
 
-The mobile button exposes `aria-expanded` and `aria-controls`. Escape closes the
-menu and restores button focus. Selection, route changes, outside clicks and
-tabbing out close it; resizing keeps focus out of hidden controls. Mobile menu
-interaction requires JavaScript. Desktop links remain ordinary anchors.
-
-Section matching uses path-segment boundaries, including invocation details under
-Audit. A border, heavier text and accent color identify the active section.
-Only exact destinations receive `aria-current="page"`; highlighted parent links
-on detail pages instead have a "Current section" description. A skip link targets
-the single main landmark. Header and content share a centered 1600px maximum
-width; existing page padding and table scroll containers are retained.
-
-After a production build, use the same external Playwright setup:
+A skip link targets the single main landmark. Header and content share a centered
+1600px maximum width; wide tables remain locally scrollable. After a production
+build, use the existing external Playwright setup:
 
 ```bash
 AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
 node scripts/filter-smoke.mjs --themes --navigation
 ```
 
-The navigation runner tests both themes at 1440, 768, 640, 639, 390 and 320px, all six links,
-all ten route mappings, parent versus exact-page semantics, mobile keyboard and
-close behavior, resize focus, skip navigation, theme persistence, reduced motion,
-page overflow and the large-screen content cap. Optional screenshots go to
-`AGENTTRUST_NAVIGATION_EVIDENCE_DIR`. These use isolated UI-only test fixtures;
-they are not new real-Gateway interoperability evidence. No dependencies, routes,
-providers, filtering, pagination or audit semantics change in P3-A.
+The navigation runner covers both themes at 1440/1024/1023/768/390/320px, all six
+links, all ten route mappings, disclosure/keyboard/focus behavior, persistence,
+reduced motion and page overflow. Screenshots are optional through
+`AGENTTRUST_NAVIGATION_EVIDENCE_DIR`; fixtures are explicitly synthetic.
 
 ### P3-B compact shared components
 
-Overview retains its eight metrics and four desktop columns. Shared metric cards
+Overview retains its eight metrics and four desktop columns. V2 adds factual helper
+labels (approximately 100px card height on desktop). Shared metric cards
 use a content-driven minimum height of 80px, 14px vertical/16px horizontal padding,
 28px tabular values and smaller decorative icons. Long values can wrap. Run summary
 timestamps also wrap instead of using ellipsis. Status badges share sizing while
@@ -338,7 +327,7 @@ node scripts/filter-smoke.mjs --timestamps
 This uses only the existing temporary synthetic UI fixture and explicitly selects
 a non-UTC browser timezone; it does not alter persisted Gateway audit evidence.
 
-### P5 acceptance verification
+### P5 baseline acceptance verification (historical)
 
 See [the P5 verification report](docs/p5-verification.md) for the tested candidate,
 route matrix, real persisted-evidence comparison, screenshot inventory conventions
@@ -368,6 +357,39 @@ For an existing loopback Console, `scripts/real-acceptance-smoke.mjs` compares
 CLI from a trusted snapshot) with the actual viewer. It makes read-only page
 requests; it neither executes tools nor issues credentials. Treat real audit data
 and local evidence files as sensitive and keep them outside the public repository.
+
+### V2 visual design and analytics
+
+The [V2 implementation and verification report](docs/v2-visual-redesign.md) records
+the design reference, limits, exact file inventory and final verification evidence.
+The interface uses blue accents, white/blue-gray Light surfaces and navy Obsidian
+surfaces, shared cards/controls/tables, and one page-level h1 on supported routes.
+Theme persistence, audit ingestion, filtering and execution semantics are unchanged.
+
+Overview analytics describe only the configured readable snapshot:
+
+- Activity: one count per invocation at its first observed event, in eight
+  equal-width bins between observed endpoints (one bin for one observed time).
+  Boundaries use nanosecond arithmetic; original evidence remains unchanged.
+- Tool usage: all observed invocations by requested logical tool, including
+  denied/not-executed requests. Top five tools plus any combined remainder.
+- Execution outcomes: SUCCEEDED, FAILED, NOT_EXECUTED and UNKNOWN are mutually
+  exclusive summary categories over all observed invocations. DENY is an
+  authorization decision, not an extra execution category. Integrity flags can
+  overlap outcome counts and remain visible separately.
+
+No historical percentages, sparklines, comparison periods, global search/settings,
+export controls or policy ingestion are implied. Missing source evidence suppresses
+analytics; a readable empty source has explicit empty messages rather than a
+fabricated successful chart. Both SVG labels and visible counts expose chart data.
+
+For final verification without excessive screenshots, use the prior browser flags
+with `--acceptance`, set `AGENTTRUST_ACCEPTANCE_SCREENSHOTS=representative` (default)
+and `AGENTTRUST_SMOKE_SCREENSHOTS=0`. Choose `none` for screenshot-free engine
+regressions or `all` only when diagnosing a defect. `--skip-filters` is for focused
+reruns after the normal P1 checks have already passed; the default still runs them.
+Individual unit files can be selected, e.g. `npm test -- overview-analytics.test.tsx`;
+`npm test` continues to run the complete suite.
 
 ### Existing regression checks
 
@@ -450,3 +472,13 @@ directory.
 - UNKNOWN or Incomplete: persisted evidence cannot establish a final outcome.
   A successful SDK response or Gateway log is not a replacement audit event;
   do not repeat a side-effecting tool call just to fill an audit gap.
+
+### V2 visual acceptance corrections
+
+Recent invocations now uses ten-row server-rendered pages over the complete
+configured Gateway snapshot. `/?page=2` selects a page; totals count distinct
+observed invocations, not lifecycle records or unobserved history. Native links
+preserve browser navigation without adding fragment-only history entries.
+Audit Explorer keeps its separate 100-row pagination and filtering behavior.
+Shared Inter typography is used for names, labels and general values; opaque
+identifiers/code retain monospace. See [the correction report](docs/v2-visual-corrections.md).

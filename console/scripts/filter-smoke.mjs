@@ -63,6 +63,7 @@ try {
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
+  if (!process.argv.includes("--skip-filters")) {
   const fields = { agent: "", tool: "", authorization: "", execution: "", from: "", to: "" };
   async function controls(expected = {}) {
     for (const [name, value] of Object.entries({ ...fields, ...expected })) {
@@ -167,6 +168,7 @@ try {
   assert.ok((await native.locator("body").innerText()).includes("230 matching invocations"));
   await native.close();
   console.log("PASS: native GET filtering and reset with JavaScript disabled");
+  }
   if (process.argv.includes("--themes")) {
     const { verifyThemes } = await import("./theme-smoke.mjs");
     await verifyThemes(browser, base, audit);
@@ -190,6 +192,10 @@ try {
   if (process.argv.includes("--timestamps")) {
     const { verifyTimestamps } = await import("./timestamp-smoke.mjs");
     await verifyTimestamps(browser, base, audit);
+  }
+  if (process.argv.includes("--overview")) {
+    const { verifyOverviewCorrections } = await import("./overview-corrections-smoke.mjs");
+    await verifyOverviewCorrections(browser, base, audit, browserName);
   }
   if (process.argv.includes("--acceptance")) {
     const { verifyAcceptance } = await import("./acceptance-smoke.mjs");

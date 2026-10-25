@@ -30,7 +30,7 @@ export function GatewayFilters({ filters, agents, tools }: {
   return (
     <Form action="/audit" prefetch={false} className="ui-card mb-4" aria-labelledby="gateway-filter-title">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line p-4">
-        <div><h3 id="gateway-filter-title" className="ui-section-title flex items-center gap-2"><ListFilter className="h-4 w-4 text-muted" aria-hidden="true" />Investigate invocations</h3>
+        <div><h2 id="gateway-filter-title" className="ui-section-title flex items-center gap-2"><ListFilter className="h-4 w-4 text-muted" aria-hidden="true" />Investigate invocations</h2>
           <p className="ui-helper mt-1">Narrow persisted evidence by identity, decision or UTC time range.</p></div>
         <span className="ui-badge border-line bg-raised text-muted" aria-live="polite">{activeCount} {activeCount === 1 ? "filter" : "filters"} active</span>
       </div>

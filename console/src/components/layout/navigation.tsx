@@ -19,7 +19,7 @@ export function Navigation() {
 
   useEffect(() => { setOpen(false); }, [pathname]);
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 640px)");
+    const media = window.matchMedia("(min-width: 1024px)");
     const resize = () => {
       setOpen(false);
       // CSS can hide a focused control before matchMedia's event is delivered.
@@ -46,7 +46,7 @@ export function Navigation() {
 
   const MenuIcon = open ? X : Menu;
   return (
-    <div ref={container} className="mx-auto max-w-[1600px] px-6 lg:px-8"
+    <div ref={container} className="min-w-0"
       onFocusCapture={event => { focused.current = button.current?.contains(event.target) ? "button" : "links"; }}
       onBlur={event => {
         if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) {
@@ -63,13 +63,13 @@ export function Navigation() {
       }}>
       <button ref={button} type="button" aria-label={open ? "Close navigation" : "Open navigation"}
         aria-expanded={open} aria-controls="console-navigation" onClick={() => setOpen(value => !value)}
-        className="focus-ring flex h-12 w-full items-center gap-2 text-sm text-foreground sm:hidden">
+        className="focus-ring flex h-10 w-10 items-center justify-center rounded-lg border border-line text-sm text-foreground hover:bg-hover lg:hidden">
         <MenuIcon className="h-4 w-4" aria-hidden="true" />
-        <span>Navigation</span><span aria-hidden="true" className="ml-auto text-muted">{activeItem?.label}</span>
+        <span className="sr-only">Navigation — {activeItem?.label}</span>
       </button>
-      <nav ref={nav} id="console-navigation" aria-label="Console navigation" className={open ? "block" : "hidden sm:block"}>
+      <nav ref={nav} id="console-navigation" aria-label="Console navigation" className={`${open ? "block" : "hidden lg:block"} absolute left-0 right-0 top-full border-b border-line bg-panel shadow-lg lg:static lg:border-0 lg:bg-transparent lg:shadow-none`}>
         <span id="current-navigation-section" className="sr-only">Current section</span>
-        <div className="grid grid-cols-2 gap-1 pb-3 sm:flex sm:pb-0">
+        <div className="ui-nav-links">
           {NAVIGATION_ITEMS.map(item => {
             const Icon = icons[item.label];
             const { active, current } = navigationState(pathname, item.href);
@@ -77,7 +77,7 @@ export function Navigation() {
               aria-current={current ? "page" : undefined}
               aria-describedby={active && !current ? "current-navigation-section" : undefined}
               data-active={active ? "true" : undefined}
-              className={`focus-ring flex h-12 items-center gap-2 border-b-2 px-3 text-sm motion-safe:transition-colors hover:bg-hover ${active ? "border-accent bg-accent/10 font-semibold text-accent" : "border-transparent font-medium text-muted"}`}>
+              className={`focus-ring ui-nav-link ${active ? "border-accent bg-accent/10 font-semibold text-accent" : "border-transparent font-medium text-muted"}`}>
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /><span>{item.label}</span>
             </Link>;
           })}

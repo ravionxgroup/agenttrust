@@ -15,14 +15,14 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
   const provider = await getConsoleDataProvider();
   const tool = await provider.getTool(decodedToolName);
   const source = provider.getSourceInfo();
-  if (source.status && source.status !== "ready") return <div className="p-6"><SourceFailure source={source} /></div>;
+  if (source.status && source.status !== "ready") return <div className="p-6"><h1 className="sr-only">Tool</h1><SourceFailure source={source} /></div>;
 
   if (!tool) {
     return (
       <div className="px-6 py-6 lg:px-8">
         <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
           <div>
-            <h2 className="ui-page-title">Tool Not Observed</h2>
+            <h1 className="ui-page-title">Tool Not Observed</h1>
             <p className="ui-muted mt-1">No audited AgentTrust activity was found for this tool.</p>
           </div>
           <SourceIndicator source={source} />
@@ -42,7 +42,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
     <div className="px-6 py-6 lg:px-8">
       <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
         <div>
-          <h2 className="ui-page-title">Tool</h2>
+          <h1 className="ui-page-title">Tool</h1>
           <div className="mt-2"><TechId wrap className="text-base text-accent">{tool.tool}</TechId></div>
           <p className="ui-muted mt-2">Observed tool usage reconstructed from AgentTrust audit events.</p>
         </div>
@@ -60,7 +60,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
 
       <div className="mt-6 space-y-6">
         <section>
-          <h3 className="ui-section-title mb-3">Observed Required Scopes</h3>
+          <h2 className="ui-section-title mb-3">Observed Required Scopes</h2>
           <SectionCard className="ui-table-scroll" role="region" aria-label="Observed required scopes" tabIndex={0}>
             <table className="ui-table min-w-[420px]">
               <thead className="ui-table-header">
@@ -82,7 +82,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
         </section>
 
         <section>
-          <h3 className="ui-section-title mb-3">Agents Using This Tool</h3>
+          <h2 className="ui-section-title mb-3">Agents Using This Tool</h2>
           <SectionCard className="ui-table-scroll" role="region" aria-label="Agents using this tool" tabIndex={0}>
             <table className="ui-table min-w-[760px]">
               <thead className="ui-table-header">
@@ -116,7 +116,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
         </section>
 
         <section>
-          <h3 className="ui-section-title mb-3">Recent Runs</h3>
+          <h2 className="ui-section-title mb-3">Recent Runs</h2>
           <SectionCard className="ui-table-scroll" role="region" aria-label="Recent tool runs" tabIndex={0}>
             <table className="ui-table min-w-[760px]">
               <thead className="ui-table-header">
@@ -132,7 +132,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
                 {tool.recentRuns.map((run) => (
                   <tr key={run.runId} className="hover:bg-hover">
                     <td className="max-w-56 px-4 py-3">
-                      <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate" title={run.runId}>
+                      <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="font-mono ui-clickable-id block truncate" title={run.runId}>
                         {run.runId}
                       </Link>
                     </td>
@@ -152,7 +152,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
         </section>
 
         <section>
-          <h3 className="ui-section-title mb-3">Recent Authorization Activity</h3>
+          <h2 className="ui-section-title mb-3">Recent Authorization Activity</h2>
           <RecentEventsTable events={tool.recentEvents} />
         </section>
       </div>

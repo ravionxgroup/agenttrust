@@ -1,4 +1,4 @@
-import { GatewayOverview } from "../components/tables/gateway-audit";
+import { GatewayOverview, type SearchParams } from "../components/tables/gateway-audit";
 import { AlertTriangle, Bot, CircleSlash, ListChecks, TerminalSquare } from "lucide-react";
 import { getConsoleDataProvider } from "../lib/providers";
 import { MetricCard } from "../components/metrics/metric-card";
@@ -7,10 +7,10 @@ import { RecentEventsTable } from "../components/tables/recent-events-table";
 import { SectionCard } from "../components/layout/section-card";
 import { TechId } from "../components/badges/tech-id";
 
-export default async function OverviewPage() {
+export default async function OverviewPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const provider = await getConsoleDataProvider();
   const snapshot = await provider.getSnapshot();
-  if (snapshot.gateway) return <GatewayOverview snapshot={snapshot.gateway} source={snapshot.source} />;
+  if (snapshot.gateway) return <GatewayOverview snapshot={snapshot.gateway} source={snapshot.source} params={await searchParams} />;
   const { overview, source } = snapshot;
   const totalAuthorizationDecisions = Math.max(
     overview.authorizationSummary.allowed + overview.authorizationSummary.denied,
@@ -23,7 +23,7 @@ export default async function OverviewPage() {
     <div className="px-6 py-6 lg:px-8">
       <div className="ui-page-header">
         <div>
-          <h2 className="ui-page-title">Overview</h2>
+          <h1 className="ui-page-title">Overview</h1>
           <p className="ui-muted mt-1">Observed authorization activity from AgentTrust audit events.</p>
         </div>
         <SourceIndicator source={source} />
@@ -40,7 +40,7 @@ export default async function OverviewPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="ui-section-title">Recent Authorization Activity</h3>
+            <h2 className="ui-section-title">Recent Authorization Activity</h2>
             <a href="/audit" className="rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
               View audit
             </a>
@@ -52,7 +52,7 @@ export default async function OverviewPage() {
 
         <div className="space-y-6">
           <SectionCard className="ui-card-pad">
-            <h3 className="ui-section-title">Most Denied Tools</h3>
+            <h2 className="ui-section-title">Most Denied Tools</h2>
             <div className="mt-4 space-y-3">
               {overview.mostDeniedTools.length > 0 ? (
                 overview.mostDeniedTools.map((item) => (
@@ -68,7 +68,7 @@ export default async function OverviewPage() {
           </SectionCard>
 
           <SectionCard className="ui-card-pad">
-            <h3 className="ui-section-title">Authorization Summary</h3>
+            <h2 className="ui-section-title">Authorization Summary</h2>
             <div className="mt-4 h-3 overflow-hidden rounded bg-raised">
               <div className="flex h-full">
                 <div className="bg-success" style={{ width: `${allowedPct}%` }} />

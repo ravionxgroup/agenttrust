@@ -24,7 +24,7 @@ try {
     if (await page.locator("html").getAttribute("data-theme") !== theme) await page.getByRole("button", { name: /^Switch to/ }).click();
     await page.goto(base);
     for (const [label, value] of Object.entries(values)) {
-      const card = page.getByText(label, { exact: true }).locator("xpath=ancestor::section[1]");
+      const card = page.locator(".ui-metric-card").filter({ has: page.getByText(label, { exact: true }) });
       assert.equal(await card.locator(".ui-metric-value").innerText(), new Intl.NumberFormat("en-US").format(value));
     }
     assert.ok((await page.locator("main").innerText()).includes(`${expected.recordCount} persisted records`));

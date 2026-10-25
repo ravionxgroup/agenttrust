@@ -8,6 +8,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontSize: { xs: ["13px", { lineHeight: "20px" }] },
       colors: {
         ink: "rgb(var(--canvas) / <alpha-value>)",
         panel: "rgb(var(--surface) / <alpha-value>)",

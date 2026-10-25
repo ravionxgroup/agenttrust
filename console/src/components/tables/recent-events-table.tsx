@@ -23,7 +23,7 @@ export function RecentEventsTable({ events }: { events: AuditEvent[] }) {
           {events.map((event) => (
             <tr key={event.eventId} className="hover:bg-hover">
               <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(event.ts)}</td>
-              <td className="max-w-44 px-4 py-3 font-medium text-foreground"><span className="block truncate font-mono text-xs">{event.agentId}</span></td>
+              <td className="max-w-44 px-4 py-3 font-medium text-foreground"><span className="block truncate text-xs">{event.agentId}</span></td>
               <td className="max-w-44 px-4 py-3">
                 <Link href={`/tools/${encodeURIComponent(event.tool)}`} className="ui-clickable-id block truncate text-foreground" title={event.tool}>
                   {event.tool}
@@ -38,7 +38,7 @@ export function RecentEventsTable({ events }: { events: AuditEvent[] }) {
                   <ResultBadge decision={event.decision} resultStatus={event.resultStatus} />
                 )}
                 <div className="mt-1">
-                  <Link href={`/runs/${encodeURIComponent(event.runId)}`} className="ui-clickable-id inline-block max-w-44 truncate text-[11px] text-muted" title={event.runId}>
+                  <Link href={`/runs/${encodeURIComponent(event.runId)}`} className="font-mono ui-clickable-id inline-block max-w-44 truncate text-[12px] text-muted" title={event.runId}>
                     {event.runId}
                   </Link>
                 </div>

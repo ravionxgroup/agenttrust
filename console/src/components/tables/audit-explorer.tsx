@@ -115,7 +115,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
                       <Link
                         href={`/runs/${encodeURIComponent(event.runId)}`}
                         onClick={(mouseEvent) => mouseEvent.stopPropagation()}
-                        className="ui-clickable-id block truncate"
+                        className="font-mono ui-clickable-id block truncate"
                         title={event.runId}
                       >
                         {event.runId}
@@ -147,7 +147,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
 
       <aside className="ui-card min-w-0">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h3 className="ui-section-title">Event Detail</h3>
+          <h2 className="ui-section-title">Event Detail</h2>
           {selectedEvent ? (
             <button
               type="button"

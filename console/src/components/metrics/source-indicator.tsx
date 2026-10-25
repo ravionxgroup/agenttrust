@@ -1,12 +1,12 @@
 import { Database, FileText, FlaskConical } from "lucide-react";
 import type { DataSourceInfo, PolicySourceInfo } from "../../lib/domain";
 
-export function SourceIndicator({ source }: { source: DataSourceInfo }) {
+export function SourceIndicator({ source, detail }: { source: DataSourceInfo; detail?: string }) {
   const Icon = source.kind !== "fixtures" ? Database : FlaskConical;
   return (
     <div className="ui-source-indicator">
       <Icon className={`h-4 w-4 shrink-0 ${source.status && source.status !== "ready" ? "text-muted" : "text-accent"}`} aria-hidden="true" />
-      <span>{source.label}</span>
+      <span><span className="block font-medium text-foreground">{source.label}</span>{detail && <span className="block text-[10px]">{detail}</span>}</span>
       {source.status && source.status !== "ready" ? <span className="text-denied">{source.status.toUpperCase()} · {source.code}</span> : null}
       {source.warningCount ? <span className="text-failed">{source.warningCount} skipped lines</span> : null}
     </div>

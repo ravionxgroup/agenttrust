@@ -18,14 +18,14 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
   const policy = await provider.getPolicy();
   const declaredPolicy = policy?.agents.find((item) => item.agentId === decodedAgentId) ?? null;
   const source = provider.getSourceInfo();
-  if (source.status && source.status !== "ready") return <div className="p-6"><SourceFailure source={source} /></div>;
+  if (source.status && source.status !== "ready") return <div className="p-6"><h1 className="sr-only">Agent</h1><SourceFailure source={source} /></div>;
 
   if (!agent) {
     return (
       <div className="px-6 py-6 lg:px-8">
         <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
           <div>
-            <h2 className="ui-page-title">Agent Not Observed</h2>
+            <h1 className="ui-page-title">Agent Not Observed</h1>
             <p className="ui-muted mt-1">No audited tool activity was found for this agent ID.</p>
           </div>
           <SourceIndicator source={source} />
@@ -45,7 +45,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
     <div className="px-6 py-6 lg:px-8">
       <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
         <div>
-          <h2 className="ui-page-title">Agent</h2>
+          <h1 className="ui-page-title">Agent</h1>
           <div className="mt-2"><TechId wrap className="text-base text-accent">{agent.agentId}</TechId></div>
           <p className="ui-muted mt-2">Observed agent activity reconstructed from AgentTrust audit events.</p>
         </div>
@@ -66,7 +66,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
           <SectionCard className="ui-card-pad">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h3 className="ui-section-title">Declared Policy</h3>
+                <h2 className="ui-section-title">Declared Policy</h2>
                 <p className="ui-muted mt-1">Read-only policy declaration for this observed agent.</p>
               </div>
               <div className="text-right">
@@ -85,12 +85,12 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
         ) : null}
 
         <section>
-          <h3 className="ui-section-title mb-3">Observed Tools</h3>
+          <h2 className="ui-section-title mb-3">Observed Tools</h2>
           <ToolsSummaryTable tools={agent.observedTools} />
         </section>
 
         <section>
-          <h3 className="ui-section-title mb-3">Recent Runs</h3>
+          <h2 className="ui-section-title mb-3">Recent Runs</h2>
           <div className="ui-card ui-table-scroll" role="region" aria-label="Agent runs" tabIndex={0}>
             <table className="ui-table min-w-[960px]">
               <thead className="ui-table-header">
@@ -108,7 +108,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
                 {agent.recentRuns.map((run) => (
                   <tr key={run.runId} className="hover:bg-hover">
                     <td className="max-w-56 px-4 py-3">
-                      <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate" title={run.runId}>
+                      <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="font-mono ui-clickable-id block truncate" title={run.runId}>
                         {run.runId}
                       </Link>
                     </td>
@@ -126,7 +126,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
         </section>
 
         <section>
-          <h3 className="ui-section-title mb-3">Recent Authorization Activity</h3>
+          <h2 className="ui-section-title mb-3">Recent Authorization Activity</h2>
           <div className="overflow-x-auto">
             <RecentEventsTable events={agent.recentEvents} />
           </div>

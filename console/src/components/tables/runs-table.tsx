@@ -51,7 +51,7 @@ export function RunsTable({ runs }: { runs: RunSummary[] }) {
             {filteredRuns.map((run) => (
               <tr key={run.runId} className="transition hover:bg-hover">
                 <td className="max-w-52 px-4 py-3">
-                  <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate">
+                  <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="font-mono ui-clickable-id block truncate">
                     {run.runId}
                   </Link>
                 </td>

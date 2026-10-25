@@ -79,7 +79,7 @@ export async function verifyThemes(browser, base, audit) {
       await assertTheme(theme);
       const first = await page.evaluate(() => window.__firstThemeFrame);
       assert.equal(first.theme, theme, "selected theme must be present at first body frame");
-      assert.equal(first.background, { light: "rgb(245, 247, 250)", obsidian: "rgb(11, 13, 16)" }[theme]);
+      assert.equal(first.background, { light: "rgb(244, 247, 252)", obsidian: "rgb(11, 18, 32)" }[theme]);
       for (const route of routes) {
         const response = await page.goto(base + route);
         assert.equal(response.status(), 200, route);
@@ -112,7 +112,7 @@ export async function verifyThemes(browser, base, audit) {
         }
         function luminance(color) { const c = color.slice(0, 3).map(v => v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4); return c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722; }
         function ratio(a, b) { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0] + 0.05) / (values[1] + 0.05); }
-        const text = [...document.querySelectorAll("h2,th,td,span,p,a,select,input")].filter(el => el.getClientRects().length && !el.children.length && (el.textContent.trim() || el.tagName === "INPUT"));
+        const text = [...document.querySelectorAll("h1,h2,th,td,span,p,a,select,input")].filter(el => el.getClientRects().length && !el.children.length && (el.textContent.trim() || el.tagName === "INPUT"));
         const failures = text.map(el => ({ element: el.tagName, ratio: ratio(rgb(getComputedStyle(el).color), background(el)) })).filter(item => item.ratio < 4.5);
         const control = document.querySelector('[name="authorization"]');
         return { failures, controlBorder: ratio(rgb(getComputedStyle(control).borderTopColor), background(control)), colorScheme: getComputedStyle(document.documentElement).colorScheme };

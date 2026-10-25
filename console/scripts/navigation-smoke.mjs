@@ -44,12 +44,12 @@ export async function verifyNavigation(browser, base) {
   }
   try {
     for (const theme of ["obsidian", "light"]) {
-      for (const width of [1440, 768, 640, 639, 390, 320]) {
+      for (const width of [1440, 1024, 1023, 768, 390, 320]) {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto(base + "/audit");
         await ready();
         if (await page.locator("html").getAttribute("data-theme") !== theme) await toggle.click();
-        const mobile = width < 640;
+        const mobile = width < 1024;
         for (const [route, section] of routes) {
           const response = await page.goto(base + route);
           assert.equal(response.status(), 200, route);
@@ -63,7 +63,7 @@ export async function verifyNavigation(browser, base) {
             assert.equal(await menu().isVisible(), false);
             assert.equal(await nav.isVisible(), true);
             const height = await page.getByRole("banner").evaluate(el => el.getBoundingClientRect().height);
-            assert.ok(height >= 108 && height <= 116, `two compact header rows: ${height}`);
+            assert.ok(height >= 72 && height <= 76, `single desktop header row: ${height}`);
           }
           assert.deepEqual(await nav.locator("a").evaluateAll(links => links.map(link => link.getAttribute("href"))), destinations);
           for (const link of await nav.locator("a").all()) assert.equal(await link.isVisible(), true);
@@ -105,7 +105,8 @@ export async function verifyNavigation(browser, base) {
       assert.equal(await menu().evaluate(el => el === document.activeElement), true);
       await menu().press("Space");
       assert.equal(await menu().getAttribute("aria-expanded"), "true");
-      await page.getByRole("heading", { name: "Gateway audit explorer", exact: true }).click();
+      // The mobile dropdown overlays the heading; click visible outer page space.
+      await page.mouse.click(4, 600);
       assert.equal(await menu().getAttribute("aria-expanded"), "false");
       await openMenu();
       await nav.locator("a").last().focus();
@@ -154,6 +155,6 @@ export async function verifyNavigation(browser, base) {
     assert.ok(main.width <= 1600 && main.x >= 159, "content width is capped and centered");
     await noOverflow();
     assert.deepEqual(errors, [], "no runtime or hydration errors");
-    console.log("PASS: six links and 10 route highlights in both themes at 1440/768/640/639/390/320px, mobile disclosure/keyboard/Escape/outside/blur/resize, skip link, theme persistence, reduced motion, no page overflow, 1600px content cap and no browser errors");
+    console.log("PASS: six links and 10 route highlights in both themes at 1440/1024/1023/768/390/320px, mobile disclosure/keyboard/Escape/outside/blur/resize, skip link, theme persistence, reduced motion, no page overflow, 1600px content cap and no browser errors");
   } finally { await context.close(); }
 }

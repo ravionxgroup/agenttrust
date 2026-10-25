@@ -8,6 +8,7 @@ export async function verifyAcceptance(browser, base, audit, browserName) {
   if (!directory) throw new Error("Set AGENTTRUST_ACCEPTANCE_EVIDENCE_DIR");
   await mkdir(directory, { recursive: true });
   const original = await readFile(audit);
+  const captures = process.env.AGENTTRUST_ACCEPTANCE_SCREENSHOTS ?? "representative";
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await context.newPage(), errors = [], matrix = [], screenshots = [], observations = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -42,7 +43,11 @@ export async function verifyAcceptance(browser, base, audit, browserName) {
           assert.equal(await page.getByRole("banner").count(), 1);
           assert.equal(await page.getByRole("main").count(), 1);
           assert.ok(await page.getByRole("main").getByRole("heading").count() > 0);
-          if (await page.locator("h1").count() === 0 && observations.length === 0) observations.push("No h1: page titles start at h2 (pre-existing); no WCAG conformance claim.");
+          assert.equal(await page.locator("h1").count(), 1, "one page-level h1");
+          if (route === "/") {
+            for (const title of ["Invocation activity", "Tool usage", "Execution outcomes"]) assert.equal(await page.getByRole("heading", { name: title, exact: true }).count(), 1);
+            assert.equal(await page.getByRole("img", { name: "Succeeded: 1 of 9; Failed: 1 of 9; Not executed: 4 of 9; Unknown: 3 of 9", exact: true }).count(), 1);
+          }
           assert.equal(await page.locator(".ui-table th:not([scope=col])").count(), 0);
           assert.ok(await page.locator("input,select").evaluateAll(els => els.every(el => el.labels?.length > 0 || el.getAttribute("aria-label"))));
           assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
@@ -53,8 +58,10 @@ export async function verifyAcceptance(browser, base, audit, browserName) {
           await page.evaluate(() => document.activeElement?.blur());
           matrix.push({ route, theme, width, rendering: "PASS", navigation: "PASS", responsive: "PASS", landmarksLabelsHeaders: "PASS", keyboardSkipFocus: "PASS" });
           const file = `${browserName}-${name}-${theme}-${width}.png`;
-          await page.screenshot({ path: path.join(directory, file) });
-          screenshots.push({ file, route, theme, width, source: "synthetic UI fixture" });
+          if (captures === "all" || (captures !== "none" && ((width === 1440 && ["overview", "audit", "run-detail", "tool-detail"].includes(name)) || (name === "audit" && [1024, 390].includes(width)) || (name === "run-detail" && width === 768) || (name === "tool-detail" && width === 320)))) {
+            await page.screenshot({ path: path.join(directory, file) });
+            screenshots.push({ file, route, theme, width, source: "synthetic UI fixture" });
+          }
         }
       }
       for (const [state, data, title] of [["empty", "", "No observed invocations"], ["invalid", "invalid JSON\n", "Audit source error"], ["missing", null, "Gateway audit unavailable"]]) {
@@ -75,8 +82,10 @@ export async function verifyAcceptance(browser, base, audit, browserName) {
           }
           await page.goto(base);
           const file = `${browserName}-${state}-${theme}.png`;
-          await page.screenshot({ path: path.join(directory, file) });
-          screenshots.push({ file, route: "/", theme, width: 320, state, source: "synthetic UI fixture" });
+          if (captures !== "none") {
+            await page.screenshot({ path: path.join(directory, file) });
+            screenshots.push({ file, route: "/", theme, width: 320, state, source: "synthetic UI fixture" });
+          }
         } finally { if (data === null) await rename(audit + ".p5-backup", audit); }
       }
       await writeFile(audit, fixture);

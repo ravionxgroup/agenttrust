@@ -13,7 +13,7 @@ export function StateMessage({ title, icon: Icon, children, role, warning = fals
       <Icon className="h-4 w-4" aria-hidden="true" />
     </div>
     <div className="min-w-0 break-words">
-      <h3 className="ui-section-title">{title}</h3>
+      <h2 className="ui-section-title">{title}</h2>
       <div className="ui-body mt-1 space-y-2">{children}</div>
     </div>
   </div>;
