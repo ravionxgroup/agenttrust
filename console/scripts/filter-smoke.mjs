@@ -8,7 +8,9 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const { chromium } = await import(process.env.AGENTTRUST_PLAYWRIGHT_MODULE ?? "playwright");
+const playwright = await import(process.env.AGENTTRUST_PLAYWRIGHT_MODULE ?? "playwright");
+const browserName = process.env.AGENTTRUST_BROWSER ?? "chromium";
+if (!["chromium", "firefox", "webkit"].includes(browserName)) throw new Error("Unsupported test browser");
 const directory = await realpath(await mkdtemp(path.join(tmpdir(), "agenttrust-filter-smoke-")));
 let server, browser;
 try {
@@ -56,7 +58,8 @@ try {
     await new Promise(resolve => setTimeout(resolve, 250));
   }
   assert.ok(ready, "Console readiness timed out: " + diagnostics);
-  browser = await chromium.launch({ headless: true, ...(process.env.AGENTTRUST_BROWSER_EXECUTABLE ? { executablePath: process.env.AGENTTRUST_BROWSER_EXECUTABLE } : {}) });
+  browser = await playwright[browserName].launch({ headless: true, ...(process.env.AGENTTRUST_BROWSER_EXECUTABLE ? { executablePath: process.env.AGENTTRUST_BROWSER_EXECUTABLE } : {}) });
+  console.log(`BROWSER: ${browserName} ${browser.version()}`);
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -187,6 +190,10 @@ try {
   if (process.argv.includes("--timestamps")) {
     const { verifyTimestamps } = await import("./timestamp-smoke.mjs");
     await verifyTimestamps(browser, base, audit);
+  }
+  if (process.argv.includes("--acceptance")) {
+    const { verifyAcceptance } = await import("./acceptance-smoke.mjs");
+    await verifyAcceptance(browser, base, audit, browserName);
   }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");

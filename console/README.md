@@ -338,6 +338,37 @@ node scripts/filter-smoke.mjs --timestamps
 This uses only the existing temporary synthetic UI fixture and explicitly selects
 a non-UTC browser timezone; it does not alter persisted Gateway audit evidence.
 
+### P5 acceptance verification
+
+See [the P5 verification report](docs/p5-verification.md) for the tested candidate,
+route matrix, real persisted-evidence comparison, screenshot inventory conventions
+and explicit browser/accessibility limitations. The result is
+**READY_WITH_DOCUMENTED_LIMITATIONS**, not production readiness or WCAG conformance.
+
+The regression runner defaults to Chromium. Set `AGENTTRUST_BROWSER` to `firefox`
+or `webkit` to attempt another installed engine; use `AGENTTRUST_BROWSER_EXECUTABLE`
+when its binary is outside the external Playwright driver's expected cache.
+A browser must complete its checks to count as verified.
+
+After building, set the external Playwright module, browser executable and
+`AGENTTRUST_COMPONENT_EVIDENCE_DIR` as above, then run:
+
+```bash
+AGENTTRUST_ACCEPTANCE_EVIDENCE_DIR=/private/tmp/agenttrust-acceptance-evidence \
+node scripts/filter-smoke.mjs --themes --navigation --components --controls --data --timestamps --acceptance
+```
+
+The P5 hook adds all ten routes in both themes at 1440/1024/768/390/320px, explicit
+source states, semantic/keyboard checks and a JSON screenshot/results inventory.
+All fixture mutations remain confined to the runner's temporary synthetic source.
+Screenshots are suitable for a portfolio only when labeled as demonstration data.
+
+For an existing loopback Console, `scripts/real-acceptance-smoke.mjs` compares
+`AGENTTRUST_REAL_EVIDENCE_DIR/projected.json` (produced by the existing projection
+CLI from a trusted snapshot) with the actual viewer. It makes read-only page
+requests; it neither executes tools nor issues credentials. Treat real audit data
+and local evidence files as sensitive and keep them outside the public repository.
+
 ### Existing regression checks
 
 ```bash

@@ -67,7 +67,7 @@ export async function verifyComponents(browser, base, audit, phase = "after") {
           assert.ok(parseFloat(card.fontSize) >= 26 && parseFloat(card.fontSize) <= 30);
         }
       }
-      report[theme] = { values: expected, cards };
+      report[theme] = { values: expected, cards, valueBoxes: await values.evaluateAll(elements => elements.map(el => ({ clientHeight: el.clientHeight, scrollHeight: el.scrollHeight, overflowY: getComputedStyle(el).overflowY }))) };
       await page.screenshot({ path: path.join(directory, `overview-${phase}-${theme}.png`) });
       await overflow();
       if (phase === "before") continue;
@@ -86,7 +86,12 @@ export async function verifyComponents(browser, base, audit, phase = "after") {
         await page.goto(base);
         await ready();
         assert.equal(await values.count(), 8);
-        const clipping = await values.evaluateAll(elements => elements.some(el => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1));
+        const clipping = await values.evaluateAll(elements => elements.some(el => {
+          const style = getComputedStyle(el);
+          // Firefox includes font ink outside the line box in scrollHeight even
+          // with overflow:visible. Only hidden/clip overflow can cut that ink.
+          return el.scrollWidth > el.clientWidth + 1 || (el.scrollHeight > el.clientHeight + 1 && ["hidden", "clip"].includes(style.overflowY)) || el.getBoundingClientRect().top + el.scrollHeight > el.closest("section").getBoundingClientRect().bottom - 4;
+        }));
         assert.equal(clipping, false, `${theme} metric values must not clip at ${width}`);
         await overflow();
       }
