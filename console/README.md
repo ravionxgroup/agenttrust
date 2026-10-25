@@ -140,7 +140,7 @@ Gateway's enforcement boundary.
 ### P2 appearance themes
 
 The Console supports Obsidian (default) and Light. A compact native icon button
-sits above the existing page content, independently of the sidebar. Sun switches
+sits in the header's branding row. Sun switches
 Obsidian to Light; Moon switches Light to Obsidian. Its accessible name and tooltip
 describe the destination theme. Enter and Space activate it, and reduced-motion
 preferences disable its color transition.
@@ -193,6 +193,41 @@ keyboard focus, rendered contrast, invalid/blocked storage,
 empty/unavailable/error states and browser/hydration errors. Set
 `AGENTTRUST_THEME_EVIDENCE_DIR` to an optional local screenshot directory.
 Playwright remains externally supplied; no package dependency is added.
+
+### P3-A horizontal navigation
+
+The server-rendered header has a 64px branding row and a 48px horizontal
+navigation row. The existing Sun/Moon toggle remains in the branding row.
+The six destinations are unchanged. At widths of 640px and above all links are
+visible; smaller viewports use a native Navigation button and a two-column disclosure.
+This is ordinary link navigation, not an ARIA menu or modal drawer.
+
+The mobile button exposes `aria-expanded` and `aria-controls`. Escape closes the
+menu and restores button focus. Selection, route changes, outside clicks and
+tabbing out close it; resizing keeps focus out of hidden controls. Mobile menu
+interaction requires JavaScript. Desktop links remain ordinary anchors.
+
+Section matching uses path-segment boundaries, including invocation details under
+Audit. A border, heavier text and accent color identify the active section.
+Only exact destinations receive `aria-current="page"`; highlighted parent links
+on detail pages instead have a "Current section" description. A skip link targets
+the single main landmark. Header and content share a centered 1600px maximum
+width; existing page padding and table scroll containers are retained.
+
+After a production build, use the same external Playwright setup:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+node scripts/filter-smoke.mjs --themes --navigation
+```
+
+The navigation runner tests both themes at 1440, 768, 640, 639, 390 and 320px, all six links,
+all ten route mappings, parent versus exact-page semantics, mobile keyboard and
+close behavior, resize focus, skip navigation, theme persistence, reduced motion,
+page overflow and the large-screen content cap. Optional screenshots go to
+`AGENTTRUST_NAVIGATION_EVIDENCE_DIR`. These use isolated UI-only test fixtures;
+they are not new real-Gateway interoperability evidence. No dependencies, routes,
+providers, filtering, pagination or audit semantics change in P3-A.
 
 ### Existing regression checks
 

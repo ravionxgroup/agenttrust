@@ -168,6 +168,10 @@ try {
     const { verifyThemes } = await import("./theme-smoke.mjs");
     await verifyThemes(browser, base, audit);
   }
+  if (process.argv.includes("--navigation")) {
+    const { verifyNavigation } = await import("./navigation-smoke.mjs");
+    await verifyNavigation(browser, base);
+  }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");
 } finally {
