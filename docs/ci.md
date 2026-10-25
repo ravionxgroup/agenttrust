@@ -38,10 +38,17 @@ as proof of cross-repository integration. Configure branch protection accordingl
 ## Compatible revisions
 
 `.github/ci/compatible.json` pins Gateway
-`31ab03d5d1afbbb8b23f2cfa4026a62d9538f1fb`, the committed T09 baseline.
+`eb34201a0971c05ab811235a8c289706895a655f`, the verified T11 Gateway candidate.
+The Gateway repository reciprocally pins SDK candidate
+`51d4b1d05edd305c4f91af63c36f078cc1992763`.
 The workflow verifies and records both actual SHAs in logs and its summary.
-Pin updates require review; update to the reviewed T10 Gateway commit after
-coordinated merge to include its new Linux bridge-address probes.
+These are existing immutable anchors, not future pin-update commits, avoiding
+circular revision dependencies. Normal runs test their triggering commit against
+the sibling anchor; use explicit inputs to reproduce the exact candidate pair.
+After pushing the metadata updates, run both default integration workflows and
+record the tested SHAs before claiming hosted verification of the new defaults.
+Pin updates require review; historical verification records retain their original
+tested revisions.
 
 Manual inputs `platform_revision` and `sdk_revision` accept only full lowercase
 40-character SHAs reachable from branches of the fixed repositories. No external
