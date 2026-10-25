@@ -312,6 +312,32 @@ keyboard scrolling and screenshots. Representative 200%-equivalent reflow uses a
 720px effective viewport for a 1440px display; native browser zoom controls and
 screen readers require separate manual verification. No live audit file is edited.
 
+### P4-B.1 compact UTC table timestamps
+
+Gateway Overview and Audit Explorer `Time (UTC)` cells display
+`YYYY-MM-DD HH:mm:ss`, without fractional seconds or rounding. The shared display
+formatter normalizes explicit offsets to UTC, independently of browser locale.
+Semantic `time` elements retain the exact recorded string in `dateTime` and the
+accessible label. Invalid strings remain unchanged; missing values remain empty.
+Ingestion validation is unchanged, so invalid audit timestamps still reject the
+source rather than becoming valid display data.
+
+Invocation detail timelines and safe event metadata retain original full precision.
+Existing intentionally different epoch-based date displays (Agents, Runs, tools,
+Recent Events and Run summaries) keep their existing representation.
+
+Add `--timestamps` to the browser runner to verify fractional timestamps in both
+themes, original/accessibility metadata, single-line cells and local mobile scroll:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+AGENTTRUST_TIMESTAMP_EVIDENCE_DIR=/private/tmp/agenttrust-timestamp-evidence \
+node scripts/filter-smoke.mjs --timestamps
+```
+
+This uses only the existing temporary synthetic UI fixture and explicitly selects
+a non-UTC browser timezone; it does not alter persisted Gateway audit evidence.
+
 ### Existing regression checks
 
 ```bash

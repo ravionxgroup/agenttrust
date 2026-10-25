@@ -184,6 +184,10 @@ try {
     const { verifyData } = await import("./data-smoke.mjs");
     await verifyData(browser, base, audit);
   }
+  if (process.argv.includes("--timestamps")) {
+    const { verifyTimestamps } = await import("./timestamp-smoke.mjs");
+    await verifyTimestamps(browser, base, audit);
+  }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");
 } finally {

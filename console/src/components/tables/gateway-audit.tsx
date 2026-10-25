@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { UtcTimestamp } from "../metadata/utc-timestamp";
 import { Activity, AlertTriangle, CircleSlash, Database, ListChecks, SearchX, TerminalSquare } from "lucide-react";
 import { MetricCard } from "../metrics/metric-card";
 import { SourceIndicator } from "../metrics/source-indicator";
@@ -58,7 +59,7 @@ export function InvocationTable({ invocations, emptyTitle = "No observed invocat
     {["Invocation", "Time (UTC)", "Agent", "Tool", "Authorization", "Execution", "Evidence", "Classification"].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}
   </tr></thead><tbody className="divide-y divide-line">{invocations.map(invocation => <tr key={invocation.invocationId} className="hover:bg-hover">
     <td className="px-4 py-3"><Link href={`/invocations/${invocation.invocationId}`} className="ui-table-id text-accent hover:underline">{invocation.invocationId}</Link></td>
-    <td className="ui-table-id px-4 py-3 text-muted">{invocation.timestamp}</td>
+    <td className="ui-table-id px-4 py-3 text-muted"><UtcTimestamp value={invocation.timestamp} /></td>
     <td className="ui-table-id px-4 py-3"><span className="block truncate" title={invocation.agentId || undefined}>{invocation.agentId || "Not established"}</span></td><td className="ui-table-id px-4 py-3"><span className="block truncate" title={invocation.tool || undefined}>{invocation.tool || "Unavailable"}</span></td>
     <td className="px-4 py-3"><EvidenceBadge value={invocation.authorization} />{invocation.authorizationMissing && <span className="mt-1 block text-xs text-muted">Evidence missing</span>}</td>
     <td className="px-4 py-3"><EvidenceBadge value={invocation.execution} />{invocation.executionMissing && <span className="mt-1 block text-xs text-muted">Execution evidence missing</span>}</td>

@@ -82,3 +82,21 @@ function getUtcTimestampParts(epochSeconds: number): {
 function pad2(value: number): string {
   return String(value).padStart(2, "0");
 }
+
+/** Display only. Discard fractions before parsing so even .999999999 never rounds up.
+ * Explicit offsets are normalized to UTC; malformed/missing values return null.
+ * Callers retain the original string for evidence and accessibility.
+ */
+export function formatUtcTimestamp(value: string | null | undefined): string | null {
+  if (typeof value !== "string") return null;
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+  if (!match) return null;
+  const [, seconds, offset] = match;
+  // Validate the calendar/time before Date.parse can normalize invalid dates.
+  const calendar = Date.parse(seconds + "Z");
+  if (!Number.isFinite(calendar) || new Date(calendar).toISOString().slice(0, 19) !== seconds) return null;
+  if (offset !== "Z" && (Number(offset.slice(1, 3)) > 23 || Number(offset.slice(4)) > 59)) return null;
+  const instant = Date.parse(seconds + offset);
+  if (!Number.isFinite(instant)) return null;
+  return new Date(instant).toISOString().replace(/\.000Z$/, "").replace("T", " ");
+}
