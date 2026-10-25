@@ -27,7 +27,7 @@ export function AgentsTable({ agents }: { agents: AgentSummary[] }) {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search agent ID"
-            className="focus-ring h-10 w-full rounded-md border border-line bg-control pl-9 pr-3 text-sm text-foreground placeholder:text-muted"
+            className="ui-control pl-9"
           />
         </label>
       </div>

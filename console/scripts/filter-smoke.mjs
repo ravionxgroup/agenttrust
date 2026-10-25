@@ -176,6 +176,10 @@ try {
     const { verifyComponents } = await import("./components-smoke.mjs");
     await verifyComponents(browser, base, audit, process.argv.includes("--components-before") ? "before" : "after");
   }
+  if (process.argv.includes("--controls")) {
+    const { verifyControls } = await import("./controls-smoke.mjs");
+    await verifyControls(browser, base);
+  }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");
 } finally {

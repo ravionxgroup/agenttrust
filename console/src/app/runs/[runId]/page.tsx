@@ -20,7 +20,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
   if (!run) {
     return (
       <div className="px-6 py-6 lg:px-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="ui-page-header">
           <div>
             <h2 className="ui-page-title">Run Not Observed</h2>
             <p className="ui-muted mt-1">No audited tool activity was found for this run ID.</p>
@@ -30,7 +30,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
         <SectionCard className="p-8">
           <TechId className="text-foreground">{decodedRunId}</TechId>
           <p className="ui-muted mt-3">Runs are reconstructed from audit events, not explicit lifecycle records.</p>
-          <Link href="/runs" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
+          <Link href="/runs" className="ui-button ui-button-secondary mt-5">
             Back to runs
           </Link>
         </SectionCard>
@@ -40,7 +40,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="ui-page-header">
         <div>
           <h2 className="ui-page-title">Run</h2>
           <div className="mt-2"><TechId className="text-base text-accent">{run.runId}</TechId></div>
@@ -75,7 +75,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
           <dl className="mt-4 space-y-4">
             <Meta label="Distinct Tools" value={String(run.distinctTools)} />
             <div>
-              <dt className="text-xs uppercase tracking-wider text-muted">Token ID</dt>
+              <dt className="ui-field-label">Token ID</dt>
               {run.tokenId ? (
                 <dd className="mt-1"><TechId>{truncateId(run.tokenId, 18)}</TechId></dd>
               ) : (
@@ -92,7 +92,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wider text-muted">{label}</dt>
+      <dt className="ui-field-label">{label}</dt>
       <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   );

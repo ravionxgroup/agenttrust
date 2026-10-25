@@ -12,7 +12,7 @@ export default async function AgentsPage() {
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="ui-page-header">
         <div>
           <h2 className="ui-page-title">Agents</h2>
           <p className="ui-muted mt-1">Observed agents derived from AgentTrust audit activity.</p>
@@ -20,7 +20,7 @@ export default async function AgentsPage() {
         <SourceIndicator source={snapshot.source} />
       </div>
 
-      <SectionCard className="mb-4 flex items-start gap-3 p-4">
+      <SectionCard className="ui-info-panel">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
         <p className="ui-muted">Agents appear after they generate audited tool activity.</p>
       </SectionCard>

@@ -253,6 +253,33 @@ Use `--components-before` against the previous build for a baseline capture.
 These checks use only the runner's temporary synthetic audit file, not live
 Gateway storage or new interoperability evidence.
 
+### P4-A shared controls and page presentation
+
+Page headers, information panels and metadata labels use shared semantic styles.
+Native inputs/selects are 44px high; primary/secondary actions use a 40px minimum
+height. All use existing theme tokens, visible keyboard focus and reduced-motion
+handling. Search controls and existing pagination/back actions share these styles.
+P3-B metric-card dimensions, table columns and timeline layout are retained.
+
+The Gateway Audit filter panel keeps its six native named fields and GET fallback.
+The active count uses only URL-applied filters; draft edits do not affect it.
+Apply, Reset, same-URL Reset, history navigation and UTC date semantics are retained.
+No new filtering capability or client-side data projection is introduced.
+
+After a production build, run all UI regressions with external Playwright:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+AGENTTRUST_COMPONENT_EVIDENCE_DIR=/private/tmp/agenttrust-ui-evidence \
+AGENTTRUST_CONTROLS_EVIDENCE_DIR=/private/tmp/agenttrust-ui-evidence \
+node scripts/filter-smoke.mjs --themes --navigation --components --controls
+```
+
+The controls runner checks applied-only counts through edits/history/reset, native
+control dimensions at 1440/768/390/320px, keyboard focus, primary-button contrast,
+all ten routes and both themes. It captures representative screenshots. The same
+isolated synthetic UI fixture is used; this is not real-Gateway integration proof.
+
 ### Existing regression checks
 
 ```bash

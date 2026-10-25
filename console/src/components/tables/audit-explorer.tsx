@@ -40,7 +40,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search agent, run, tool, scope"
-              className="focus-ring h-10 w-full rounded-md border border-line bg-control pl-9 pr-3 text-sm text-foreground placeholder:text-muted"
+              className="ui-control pl-9"
             />
           </label>
           <label>
@@ -48,7 +48,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
             <select
               value={agentId}
               onChange={(event) => setAgentId(event.target.value)}
-              className="focus-ring h-10 w-full rounded-md border border-line bg-control px-3 text-sm text-foreground"
+              className="ui-control"
             >
               <option value="">All agents</option>
               {agents.map((agent) => (
@@ -61,7 +61,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
             <select
               value={decision}
               onChange={(event) => setDecision(event.target.value as "all" | Decision)}
-              className="focus-ring h-10 w-full rounded-md border border-line bg-control px-3 text-sm text-foreground"
+              className="ui-control"
             >
               <option value="all">All decisions</option>
               <option value="allow">Allow</option>
@@ -152,7 +152,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
             <button
               type="button"
               onClick={() => setSelectedId("")}
-              className="focus-ring rounded-md p-1 text-muted transition hover:bg-hover hover:text-foreground"
+              className="ui-action text-muted"
               aria-label="Clear selected audit event"
             >
               <X className="h-4 w-4" aria-hidden="true" />

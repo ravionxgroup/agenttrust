@@ -20,7 +20,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
   if (!tool) {
     return (
       <div className="px-6 py-6 lg:px-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="ui-page-header">
           <div>
             <h2 className="ui-page-title">Tool Not Observed</h2>
             <p className="ui-muted mt-1">No audited AgentTrust activity was found for this tool.</p>
@@ -30,7 +30,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
         <SectionCard className="p-8">
           <TechId className="text-foreground">{decodedToolName}</TechId>
           <p className="ui-muted mt-3">Tools are derived from audit events, not a registry.</p>
-          <Link href="/tools" className="mt-5 inline-flex rounded-md border border-line px-3 py-2 text-sm text-muted transition hover:bg-hover hover:text-foreground">
+          <Link href="/tools" className="ui-button ui-button-secondary mt-5">
             Back to tools
           </Link>
         </SectionCard>
@@ -40,7 +40,7 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ too
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="ui-page-header">
         <div>
           <h2 className="ui-page-title">Tool</h2>
           <div className="mt-2"><TechId className="text-base text-accent">{tool.tool}</TechId></div>

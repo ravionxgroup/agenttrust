@@ -34,7 +34,7 @@ export function SourceFailure({ source }: { source: DataSourceInfo }) {
 export function GatewayOverview({ snapshot, source }: { snapshot: GatewaySnapshot; source: DataSourceInfo }) {
   const m = snapshot.metrics;
   return <div className="px-6 py-6 lg:px-8">
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="ui-page-title">Gateway execution overview</h2><p className="ui-muted mt-1">Persisted lifecycle evidence, counted once per invocation.</p></div><SourceIndicator source={source} /></header>
+    <header className="ui-page-header"><div><h2 className="ui-page-title">Gateway execution overview</h2><p className="ui-muted mt-1">Persisted lifecycle evidence, counted once per invocation.</p></div><SourceIndicator source={source} /></header>
     {source.status !== "ready" ? <SourceFailure source={source} /> : <>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Observed invocations" value={m.total} icon={TerminalSquare} />
@@ -47,7 +47,7 @@ export function GatewayOverview({ snapshot, source }: { snapshot: GatewaySnapsho
         <MetricCard label="Conflicting evidence" value={m.conflicting} icon={AlertTriangle} tone="rose" />
       </div>
       <p className="ui-muted my-5">{snapshot.recordCount} persisted records · {snapshot.duplicateCount} identical duplicate copies. ALLOW is authorization evidence, never execution success.</p>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="ui-section-title">Recent invocations</h3><Link href="/audit" className="text-sm text-accent">Explore all invocations</Link></div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="ui-section-title">Recent invocations</h3><Link href="/audit" className="ui-action">Explore all invocations</Link></div>
       <InvocationTable invocations={snapshot.invocations.slice(0, 20)} />
     </>}
   </div>;
@@ -70,20 +70,20 @@ export function GatewayExplorer({ snapshot, source, params }: { snapshot: Gatewa
   const page = pageNumber(params.page);
   const pageSize = 100;
   const href = (target: number) => { const search = new URLSearchParams(); for (const [key, value] of Object.entries(filters)) if (value) search.set(key, value); search.set("page", String(target)); return `/audit?${search}`; };
-  return <div className="px-6 py-6 lg:px-8"><header className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h2 className="ui-page-title">Gateway audit explorer</h2><p className="ui-muted mt-1">One row per invocation; open a row for original event metadata and timeline.</p></div><SourceIndicator source={source} /></header>
+  return <div className="px-6 py-6 lg:px-8"><header className="ui-page-header"><div><h2 className="ui-page-title">Gateway audit explorer</h2><p className="ui-muted mt-1">One row per invocation; open a row for original event metadata and timeline.</p></div><SourceIndicator source={source} /></header>
     {source.status !== "ready" ? <SourceFailure source={source} /> : <>
       <GatewayFilters key={JSON.stringify([filters, page])} filters={filters}
         agents={[...new Set(snapshot.invocations.map(i => i.agentId).filter(Boolean))].sort()}
         tools={[...new Set(snapshot.invocations.map(i => i.tool).filter(Boolean))].sort()} />
       <p className="ui-muted mb-3">{filtered.length} matching invocations · page {page}. Filters do not change lifecycle correlation.</p>
       <InvocationTable invocations={filtered.slice((page - 1) * pageSize, page * pageSize)} emptyTitle={Object.values(filters).some(Boolean) ? "No matching invocations" : "No observed invocations"} />
-      <nav aria-label="Invocation pages" className="mt-4 flex gap-4 text-sm text-accent">{page > 1 && <Link href={href(page - 1)}>Previous</Link>}{page * pageSize < filtered.length && <Link href={href(page + 1)}>Next</Link>}</nav>
+      <nav aria-label="Invocation pages" className="mt-4 flex flex-wrap gap-3 text-sm text-accent [&>a]:ui-button [&>a]:ui-button-secondary">{page > 1 && <Link href={href(page - 1)}>Previous</Link>}{page * pageSize < filtered.length && <Link href={href(page + 1)}>Next</Link>}</nav>
     </>}
   </div>;
 }
 export function InvocationDetail({ invocation, page = 1 }: { invocation: Invocation; page?: number }) {
   const events = invocation.events.slice((page - 1) * 100, page * 100);
-  return <div className="px-6 py-6 lg:px-8"><Link href="/audit" className="text-sm text-accent">Back to invocation list</Link><h2 className="ui-page-title mt-4">Invocation details</h2><p className="my-3 break-all font-mono text-sm text-muted">{invocation.invocationId}</p>
+  return <div className="px-6 py-6 lg:px-8"><Link href="/audit" className="ui-action">Back to invocation list</Link><header className="ui-page-header mt-4"><div><h2 className="ui-page-title">Invocation details</h2><p className="mt-3 break-all font-mono text-sm text-muted">{invocation.invocationId}</p></div></header>
     <SectionCard className="ui-card-pad"><div className="flex flex-wrap gap-3"><EvidenceBadge value={invocation.authorization} /><EvidenceBadge value={invocation.execution} /><Integrity invocation={invocation} /></div>
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2"><Field label="Agent" value={invocation.agentId || "Not established"} /><Field label="Run" value={invocation.runId || "Not established"} /><Field label="Logical tool" value={invocation.tool || "Unavailable"} /><Field label="Request correlation (not invocation identity)" value={invocation.requestId} /></dl>
       {invocation.authorizationMissing && <p className="mt-4 text-failed">Authorization evidence is missing.</p>}{invocation.executionMissing && <p className="mt-4 text-unknown">Execution evidence is missing. ALLOW cannot establish success.</p>}
@@ -92,7 +92,7 @@ export function InvocationDetail({ invocation, page = 1 }: { invocation: Invocat
     </SectionCard>
     <h3 className="ui-section-title mb-3 mt-6">Persisted event timeline</h3><p className="ui-muted mb-4">Original IDs and timestamps, sorted by event time. Only allow-listed metadata is shown; credentials and payloads are omitted.</p>
     <ol className="space-y-4">{events.map((event, index) => <li key={`${event.event_id}-${index}`} className="ui-card p-4"><div className="flex flex-wrap items-center gap-3"><strong className="text-sm">{event.event_type}</strong><EvidenceBadge value={event.authorization_decision} /><EvidenceBadge value={event.execution_status} /></div><p className="mt-2 break-all font-mono text-xs text-muted">{event.timestamp} · event {event.event_id}</p><p className="mt-2 text-sm text-muted">Audit classification: {event.reason}</p><details className="mt-3"><summary className="cursor-pointer text-sm text-accent">Safe event metadata</summary><pre className="mt-2 overflow-auto whitespace-pre-wrap break-all text-xs text-muted">{JSON.stringify(event, null, 2)}</pre></details></li>)}</ol>
-    <nav aria-label="Timeline pages" className="mt-4 flex gap-4 text-sm text-accent">{page > 1 && <Link href={`?page=${page - 1}`}>Previous events</Link>}{page * 100 < invocation.events.length && <Link href={`?page=${page + 1}`}>Next events</Link>}</nav>
+    <nav aria-label="Timeline pages" className="mt-4 flex flex-wrap gap-3 text-sm text-accent [&>a]:ui-button [&>a]:ui-button-secondary">{page > 1 && <Link href={`?page=${page - 1}`}>Previous events</Link>}{page * 100 < invocation.events.length && <Link href={`?page=${page + 1}`}>Next events</Link>}</nav>
   </div>;
 }
-function Field({ label, value }: { label: string; value: string }) { return <div><dt className="text-muted">{label}</dt><dd className="mt-1 break-all text-foreground">{value}</dd></div>; }
+function Field({ label, value }: { label: string; value: string }) { return <div><dt className="ui-field-label">{label}</dt><dd className="mt-1 break-all text-foreground">{value}</dd></div>; }

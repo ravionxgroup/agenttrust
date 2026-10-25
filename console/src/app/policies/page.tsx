@@ -16,7 +16,7 @@ export default async function PoliciesPage() {
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="ui-page-header">
         <div>
           <h2 className="ui-page-title">Policies</h2>
           <p className="ui-muted mt-1">Read-only view of AgentTrust agent scope policy.</p>
@@ -24,7 +24,7 @@ export default async function PoliciesPage() {
         <PolicySourceIndicator source={policySource} />
       </div>
 
-      <SectionCard className="mb-4 flex items-start gap-3 p-4">
+      <SectionCard className="ui-info-panel">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
         <p className="ui-muted">
           {snapshot.gateway ? "Gateway policy is not ingested. Authorization decisions shown by the Console come from persisted audit evidence; enforcement remains in the Gateway." : "This is declared local SDK configuration. It is separate from Gateway enforcement."}

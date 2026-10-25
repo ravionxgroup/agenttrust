@@ -97,6 +97,50 @@ button:disabled {
 }
 
 @layer components {
+  .ui-page-header {
+    @apply mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5;
+  }
+
+  .ui-field-label {
+    @apply block text-xs font-medium leading-5 text-muted;
+  }
+
+  .ui-helper {
+    @apply text-xs font-normal leading-5 text-muted;
+  }
+
+  .ui-control {
+    @apply block h-11 w-full min-w-0 max-w-full rounded-md border border-control-border bg-control px-3 text-sm font-normal text-foreground placeholder:text-muted hover:border-accent focus-visible:border-accent motion-safe:transition-colors;
+  }
+
+  .ui-select {
+    @apply appearance-none pr-10;
+  }
+
+  .ui-button {
+    @apply inline-flex min-h-10 max-w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold leading-5 motion-safe:transition-colors;
+  }
+
+  .ui-button-primary {
+    @apply border-accent bg-accent text-ink hover:bg-accent/90;
+  }
+
+  .ui-button-secondary {
+    @apply border-control-border bg-control text-foreground hover:border-accent hover:bg-hover;
+  }
+
+  .ui-action {
+    @apply inline-flex min-h-9 items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-accent hover:bg-hover motion-safe:transition-colors;
+  }
+
+  .ui-info-panel {
+    @apply mb-4 flex items-start gap-3 rounded-lg border border-line bg-panel p-4;
+  }
+
+  .ui-control:disabled, .ui-button:disabled, .ui-button[aria-disabled="true"] {
+    @apply cursor-not-allowed border-line bg-raised text-muted;
+  }
+
   .ui-page-title {
     @apply text-[26px] font-semibold leading-8 tracking-normal text-foreground;
   }

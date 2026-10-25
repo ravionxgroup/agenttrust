@@ -117,7 +117,7 @@ test("Gateway filter form renders URL-applied values and submits GET without the
   assert.ok(!form.includes('name="page"'));
   for (const value of ["agent", "status", "ALLOW", "FAILED"]) assert.ok(form.includes(`value="${value}" selected=""`));
   for (const name of ["from", "to"]) assert.ok(form.includes(`value="${params[name as "from" | "to"]}"`));
-  assert.match(form, /href="\/audit"[^>]*>Reset filters/);
+  assert.match(form.replace(/<svg\b[\s\S]*?<\/svg>/g, ""), /href="\/audit"[^>]*>Reset filters/);
 });
 
 test("Gateway pagination preserves every applied filter and slices invocation rows", () => {
