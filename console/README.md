@@ -229,6 +229,30 @@ page overflow and the large-screen content cap. Optional screenshots go to
 they are not new real-Gateway interoperability evidence. No dependencies, routes,
 providers, filtering, pagination or audit semantics change in P3-A.
 
+### P3-B compact shared components
+
+Overview retains its eight metrics and four desktop columns. Shared metric cards
+use a content-driven minimum height of 80px, 14px vertical/16px horizontal padding,
+28px tabular values and smaller decorative icons. Long values can wrap. Run summary
+timestamps also wrap instead of using ellipsis. Status badges share sizing while
+retaining separate authorization, execution and evidence-integrity labels/colors.
+Policy-source indicators are neutral; ingestion limitations remain visible.
+
+After a production build, capture component evidence and run all UI regressions:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+AGENTTRUST_COMPONENT_EVIDENCE_DIR=/private/tmp/agenttrust-component-evidence \
+node scripts/filter-smoke.mjs --themes --navigation --components
+```
+
+The component runner checks all eight metric values, desktop dimensions, badge
+heights, responsive clipping, Run/invocation details, policy limitations and
+empty/error states in both themes. It saves screenshots and measured dimensions.
+Use `--components-before` against the previous build for a baseline capture.
+These checks use only the runner's temporary synthetic audit file, not live
+Gateway storage or new interoperability evidence.
+
 ### Existing regression checks
 
 ```bash

@@ -1,9 +1,10 @@
 import { formatResult } from "../../lib/format";
 import type { Decision, ResultStatus } from "../../lib/domain";
+import { StatusBadge } from "./status-badge";
 
 export function ResultBadge({ decision, resultStatus }: { decision: Decision; resultStatus: ResultStatus }) {
   const label = formatResult(resultStatus, decision);
-  const tone = label === "OK" ? "text-success" : label === "ERROR" ? "text-failed" : "text-muted";
+  const tone = label === "OK" ? "success" : label === "ERROR" ? "failed" : label === "UNKNOWN" ? "unknown" : "neutral";
 
-  return <span className={`text-xs font-semibold ${tone}`}>{label}</span>;
+  return <StatusBadge tone={tone}>{label}</StatusBadge>;
 }

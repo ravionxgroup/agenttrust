@@ -53,6 +53,7 @@ body {
   margin: 0;
   background: rgb(var(--canvas));
   color: rgb(var(--foreground));
+  font-variant-numeric: tabular-nums;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
@@ -85,9 +86,19 @@ select.focus-ring {
   outline-offset: 2px;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(a, button, input, select, summary, [tabindex]) {
+    transition: none !important;
+  }
+}
+
 @layer components {
   .ui-page-title {
-    @apply text-2xl font-semibold tracking-normal text-foreground;
+    @apply text-[26px] font-semibold leading-8 tracking-normal text-foreground;
   }
 
   .ui-section-title {
@@ -107,7 +118,27 @@ select.focus-ring {
   }
 
   .ui-metric-value {
-    @apply text-3xl font-semibold tracking-normal text-foreground;
+    @apply text-[28px] font-semibold leading-8 tracking-normal text-foreground tabular-nums;
+  }
+
+  .ui-metric-card {
+    @apply min-h-20 px-4 py-3.5;
+  }
+
+  .ui-metric-label {
+    @apply text-xs font-medium leading-4 text-muted;
+  }
+
+  .ui-summary-value {
+    @apply break-words text-lg font-semibold leading-6 text-foreground tabular-nums;
+  }
+
+  .ui-badge {
+    @apply inline-flex min-h-6 items-center justify-center whitespace-nowrap rounded-md border px-2 py-0.5 align-middle text-xs font-semibold leading-4;
+  }
+
+  .ui-source-indicator {
+    @apply inline-flex max-w-full flex-wrap items-center gap-2 rounded-md border border-line bg-panel px-3 py-2 text-xs leading-5 text-muted;
   }
 
   .ui-tech-id {
@@ -119,11 +150,11 @@ select.focus-ring {
   }
 
   .ui-card-pad {
-    @apply p-5;
+    @apply p-4;
   }
 
   .ui-clickable-id {
-    @apply rounded border border-transparent bg-raised px-1.5 py-0.5 text-accent transition;
+    @apply rounded border border-transparent bg-raised px-1.5 py-0.5 text-accent motion-safe:transition-colors hover:bg-hover;
   }
 
   .ui-row-selected {

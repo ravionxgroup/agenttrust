@@ -20,16 +20,16 @@ export function MetricCard({
   }[tone];
 
   return (
-    <section className="ui-card ui-card-pad min-h-32">
-      <div className="flex h-full items-center justify-between gap-4">
-        <div>
-          <div className="text-sm text-muted">{label}</div>
-          <div className="ui-metric-value mt-2 truncate" title={String(value)}>
+    <section className="ui-card ui-metric-card">
+      <div className="flex h-full items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="ui-metric-label">{label}</div>
+          <div className="ui-metric-value mt-0.5 break-words" title={String(value)}>
             {typeof value === "number" ? formatNumber(value) : value}
           </div>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-md border ${toneClass}`}>
-          <Icon className="h-5 w-5" aria-hidden="true" />
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${toneClass}`}>
+          <Icon className="h-4 w-4" aria-hidden="true" />
         </div>
       </div>
     </section>

@@ -55,13 +55,13 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <RunSummaryCard label="First Observed Event" value={formatTimestamp(run.firstObservedAt)} icon={<Clock className="h-5 w-5" aria-hidden="true" />} />
-        <RunSummaryCard label="Last Observed Event" value={formatTimestamp(run.lastObservedAt)} icon={<ListChecks className="h-5 w-5" aria-hidden="true" />} />
-        <RunSummaryCard label="Observed Window" value={formatObservedWindow(run.observedWindowSeconds)} icon={<Clock className="h-5 w-5" aria-hidden="true" />} />
-        <RunSummaryCard label="Tool Calls" value={String(run.toolCalls)} icon={<TerminalSquare className="h-5 w-5" aria-hidden="true" />} />
-        <RunSummaryCard label="Allowed" value={String(run.allowedCalls)} icon={<ListChecks className="h-5 w-5" aria-hidden="true" />} tone="teal" />
-        <RunSummaryCard label="Denied" value={String(run.deniedCalls)} icon={<CircleSlash className="h-5 w-5" aria-hidden="true" />} tone="rose" />
-        <RunSummaryCard label="Execution Errors" value={String(run.executionErrors)} icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />} tone="amber" />
+        <RunSummaryCard label="First Observed Event" value={formatTimestamp(run.firstObservedAt)} icon={<Clock className="h-4 w-4" aria-hidden="true" />} />
+        <RunSummaryCard label="Last Observed Event" value={formatTimestamp(run.lastObservedAt)} icon={<ListChecks className="h-4 w-4" aria-hidden="true" />} />
+        <RunSummaryCard label="Observed Window" value={formatObservedWindow(run.observedWindowSeconds)} icon={<Clock className="h-4 w-4" aria-hidden="true" />} />
+        <RunSummaryCard label="Tool Calls" value={String(run.toolCalls)} icon={<TerminalSquare className="h-4 w-4" aria-hidden="true" />} />
+        <RunSummaryCard label="Allowed" value={String(run.allowedCalls)} icon={<ListChecks className="h-4 w-4" aria-hidden="true" />} tone="teal" />
+        <RunSummaryCard label="Denied" value={String(run.deniedCalls)} icon={<CircleSlash className="h-4 w-4" aria-hidden="true" />} tone="rose" />
+        <RunSummaryCard label="Execution Errors" value={String(run.executionErrors)} icon={<AlertTriangle className="h-4 w-4" aria-hidden="true" />} tone="amber" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -117,13 +117,13 @@ function RunSummaryCard({
   }[tone];
 
   return (
-    <SectionCard className="ui-card-pad min-h-32">
-      <div className="flex h-full items-center justify-between gap-4">
+    <SectionCard className="ui-metric-card">
+      <div className="flex h-full items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm text-muted">{label}</div>
-          <div className="mt-2 truncate text-xl font-semibold tracking-normal text-foreground" title={value}>{value}</div>
+          <div className="ui-metric-label">{label}</div>
+          <div className="ui-summary-value mt-0.5" title={value}>{value}</div>
         </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${toneClass}`}>
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${toneClass}`}>
           {icon}
         </div>
       </div>

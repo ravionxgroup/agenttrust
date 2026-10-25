@@ -172,6 +172,10 @@ try {
     const { verifyNavigation } = await import("./navigation-smoke.mjs");
     await verifyNavigation(browser, base);
   }
+  if (process.argv.includes("--components") || process.argv.includes("--components-before")) {
+    const { verifyComponents } = await import("./components-smoke.mjs");
+    await verifyComponents(browser, base, audit, process.argv.includes("--components-before") ? "before" : "after");
+  }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");
 } finally {
