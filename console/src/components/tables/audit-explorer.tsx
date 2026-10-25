@@ -8,7 +8,7 @@ import { ResultBadge } from "../badges/result-badge";
 import { TechId } from "../badges/tech-id";
 import type { AuditEvent, Decision } from "../../lib/domain";
 import { filterAuditEvents, uniqueObservedAgents } from "../../lib/derive";
-import { formatFullTimestamp, formatTimestamp, stringifyJson, truncateId } from "../../lib/format";
+import { formatFullTimestamp, formatTimestamp, stringifyJson } from "../../lib/format";
 
 export function AuditExplorer({ events }: { events: AuditEvent[] }) {
   const [search, setSearch] = useState("");
@@ -70,17 +70,17 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
           </label>
         </div>
 
-        <div className="ui-card overflow-x-auto">
-          <table className="w-full min-w-[920px] text-left text-sm">
+        <div className="ui-card ui-table-scroll" role="region" aria-label="Local audit events" tabIndex={0}>
+          <table className="ui-table min-w-[920px]">
             <thead className="ui-table-header">
               <tr>
-                <th className="px-4 py-3 font-medium">Time</th>
-                <th className="px-4 py-3 font-medium">Agent</th>
-                <th className="px-4 py-3 font-medium">Run</th>
-                <th className="px-4 py-3 font-medium">Tool</th>
-                <th className="px-4 py-3 font-medium">Required Scope</th>
-                <th className="px-4 py-3 font-medium">Decision</th>
-                <th className="px-4 py-3 font-medium">Result</th>
+                <th scope="col" className="px-4 py-3 font-medium">Time</th>
+                <th scope="col" className="px-4 py-3 font-medium">Agent</th>
+                <th scope="col" className="px-4 py-3 font-medium">Run</th>
+                <th scope="col" className="px-4 py-3 font-medium">Tool</th>
+                <th scope="col" className="px-4 py-3 font-medium">Required Scope</th>
+                <th scope="col" className="px-4 py-3 font-medium">Decision</th>
+                <th scope="col" className="px-4 py-3 font-medium">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -118,7 +118,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
                         className="ui-clickable-id block truncate"
                         title={event.runId}
                       >
-                        {truncateId(event.runId, 16)}
+                        {event.runId}
                       </Link>
                     </td>
                     <td className="max-w-44 px-4 py-3">
@@ -165,7 +165,7 @@ export function AuditExplorer({ events }: { events: AuditEvent[] }) {
             <Detail label="Timestamp" value={formatFullTimestamp(selectedEvent.ts)} />
             <Detail label="Agent ID" value={selectedEvent.agentId} clickableReady />
             <Detail label="Run ID" value={selectedEvent.runId} mono />
-            <Detail label="Token ID" value={truncateId(selectedEvent.tokenId, 18)} mono />
+            <Detail label="Token ID" value={selectedEvent.tokenId} mono />
             <Detail label="Tool" value={selectedEvent.tool} />
             <Detail label="Required Scope" value={selectedEvent.requiredScope} mono />
             <div className="grid grid-cols-2 gap-3">
@@ -213,7 +213,7 @@ function Detail({
   const valueClass = mono
     ? "ui-tech-id whitespace-normal break-all text-muted"
     : clickableReady
-      ? "ui-clickable-id inline-block max-w-full truncate text-sm text-foreground"
+      ? "ui-clickable-id ui-id-wrap inline-block max-w-full break-all whitespace-normal text-sm text-foreground"
       : "break-words text-sm text-foreground";
 
   return (

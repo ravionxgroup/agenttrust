@@ -280,6 +280,38 @@ control dimensions at 1440/768/390/320px, keyboard focus, primary-button contras
 all ten routes and both themes. It captures representative screenshots. The same
 isolated synthetic UI fixture is used; this is not real-Gateway integration proof.
 
+### P4-B tables, timelines and identifiers
+
+All tables share header/cell spacing, top alignment, row separators and focus/hover
+surfaces. Counts/durations align right with tabular numerals; identity and status
+columns remain left-aligned. Existing columns and values are retained. Gateway
+invocation columns have explicit widths; tables scroll locally rather than hiding
+security evidence. Named scroll regions are keyboard-focusable with visible focus.
+
+Run timelines use separate labeled authorization/execution columns on desktop and
+stacked groups below 768px. Ordering and status calculation are unchanged.
+List identifiers retain full accessible text with CSS truncation where appropriate;
+existing details wrap complete values. Gateway token-ID omission is unchanged.
+The Tools list's +N scope indicator links to the existing Tool Details page, which
+shows all observed scopes and counts. This does not represent policy ingestion.
+
+After building, add the data presentation checks to the existing browser runner:
+
+```bash
+AGENTTRUST_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+AGENTTRUST_COMPONENT_EVIDENCE_DIR=/private/tmp/agenttrust-ui-evidence \
+AGENTTRUST_CONTROLS_EVIDENCE_DIR=/private/tmp/agenttrust-ui-evidence \
+AGENTTRUST_DATA_EVIDENCE_DIR=/private/tmp/agenttrust-ui-evidence \
+node scripts/filter-smoke.mjs --themes --navigation --components --controls --data
+```
+
+Data checks use long IDs, multiple scopes and mixed execution outcomes in an
+isolated synthetic fixture. They cover ten routes in both themes at 1440, 768,
+390 and 320px, numeric alignment, table headers, timeline columns, scope navigation,
+keyboard scrolling and screenshots. Representative 200%-equivalent reflow uses a
+720px effective viewport for a 1440px display; native browser zoom controls and
+screen readers require separate manual verification. No live audit file is edited.
+
 ### Existing regression checks
 
 ```bash

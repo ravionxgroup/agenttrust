@@ -2,7 +2,7 @@ import { SourceFailure } from "../../../components/tables/gateway-audit";
 import Link from "next/link";
 import { AlertTriangle, CircleSlash, Hammer, ListChecks, TerminalSquare } from "lucide-react";
 import { getConsoleDataProvider } from "../../../lib/providers";
-import { formatObservedWindow, formatTimestamp, truncateId } from "../../../lib/format";
+import { formatObservedWindow, formatTimestamp } from "../../../lib/format";
 import { MetricCard } from "../../../components/metrics/metric-card";
 import { SourceIndicator } from "../../../components/metrics/source-indicator";
 import { RecentEventsTable } from "../../../components/tables/recent-events-table";
@@ -23,7 +23,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
   if (!agent) {
     return (
       <div className="px-6 py-6 lg:px-8">
-        <div className="ui-page-header">
+        <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
           <div>
             <h2 className="ui-page-title">Agent Not Observed</h2>
             <p className="ui-muted mt-1">No audited tool activity was found for this agent ID.</p>
@@ -31,7 +31,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
           <SourceIndicator source={source} />
         </div>
         <SectionCard className="p-8">
-          <TechId className="text-foreground">{decodedAgentId}</TechId>
+          <TechId wrap className="text-foreground">{decodedAgentId}</TechId>
           <p className="ui-muted mt-3">Agents are derived from audit events, not an agent registry.</p>
           <Link href="/agents" className="ui-button ui-button-secondary mt-5">
             Back to agents
@@ -43,10 +43,10 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="ui-page-header">
+      <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
         <div>
           <h2 className="ui-page-title">Agent</h2>
-          <div className="mt-2"><TechId className="text-base text-accent">{agent.agentId}</TechId></div>
+          <div className="mt-2"><TechId wrap className="text-base text-accent">{agent.agentId}</TechId></div>
           <p className="ui-muted mt-2">Observed agent activity reconstructed from AgentTrust audit events.</p>
         </div>
         <SourceIndicator source={source} />
@@ -76,7 +76,7 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {declaredPolicy.scopes.map((scope) => (
-                <TechId key={scope} className="rounded border border-accent/15 bg-accent/10 px-2 py-1 text-accent">
+                <TechId wrap key={scope} className="rounded border border-accent/15 bg-accent/10 px-2 py-1 text-accent">
                   {scope}
                 </TechId>
               ))}
@@ -91,17 +91,17 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
 
         <section>
           <h3 className="ui-section-title mb-3">Recent Runs</h3>
-          <div className="ui-card overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left text-sm">
+          <div className="ui-card ui-table-scroll" role="region" aria-label="Agent runs" tabIndex={0}>
+            <table className="ui-table min-w-[960px]">
               <thead className="ui-table-header">
                 <tr>
-                  <th className="px-4 py-3">Run ID</th>
-                  <th className="px-4 py-3">First Observed</th>
-                  <th className="px-4 py-3">Last Observed</th>
-                  <th className="px-4 py-3">Observed Window</th>
-                  <th className="px-4 py-3">Tool Calls</th>
-                  <th className="px-4 py-3">Denied</th>
-                  <th className="px-4 py-3">Execution Errors</th>
+                  <th scope="col" className="px-4 py-3">Run ID</th>
+                  <th scope="col" className="px-4 py-3">First Observed</th>
+                  <th scope="col" className="px-4 py-3">Last Observed</th>
+                  <th scope="col" className="ui-numeric px-4 py-3">Observed Window</th>
+                  <th scope="col" className="ui-numeric px-4 py-3">Tool Calls</th>
+                  <th scope="col" className="ui-numeric px-4 py-3">Denied</th>
+                  <th scope="col" className="ui-numeric px-4 py-3">Execution Errors</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -109,15 +109,15 @@ export default async function AgentDetailPage({ params }: { params: Promise<{ ag
                   <tr key={run.runId} className="hover:bg-hover">
                     <td className="max-w-56 px-4 py-3">
                       <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate" title={run.runId}>
-                        {truncateId(run.runId, 18)}
+                        {run.runId}
                       </Link>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(run.firstObservedAt)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(run.lastObservedAt)}</td>
-                    <td className="px-4 py-3 text-muted">{formatObservedWindow(run.observedWindowSeconds)}</td>
-                    <td className="px-4 py-3 text-muted">{run.toolCalls}</td>
-                    <td className="px-4 py-3 text-denied">{run.deniedCalls}</td>
-                    <td className="px-4 py-3 text-failed">{run.executionErrors}</td>
+                    <td className="ui-numeric px-4 py-3 text-muted">{formatObservedWindow(run.observedWindowSeconds)}</td>
+                    <td className="ui-numeric px-4 py-3 text-muted">{run.toolCalls}</td>
+                    <td className="ui-numeric px-4 py-3 text-denied">{run.deniedCalls}</td>
+                    <td className="ui-numeric px-4 py-3 text-failed">{run.executionErrors}</td>
                   </tr>
                 ))}
               </tbody>

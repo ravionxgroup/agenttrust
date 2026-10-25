@@ -1,11 +1,9 @@
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef } from "react";
 
 export function SectionCard({
   children,
   className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <section className={`ui-card ${className}`}>{children}</section>;
+  ...props
+}: ComponentPropsWithoutRef<"section">) {
+  return <section {...props} className={`ui-card ${className}`}>{children}</section>;
 }

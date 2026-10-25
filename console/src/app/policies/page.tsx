@@ -42,13 +42,13 @@ export default async function PoliciesPage() {
 
           <section className="mt-6">
             <h3 className="ui-section-title mb-3">Agent Policies</h3>
-            <SectionCard className="overflow-x-auto">
-              <table className="w-full min-w-[780px] text-left text-sm">
+            <SectionCard className="ui-table-scroll" role="region" aria-label="Declared local policy" tabIndex={0}>
+              <table className="ui-table min-w-[780px]">
                 <thead className="ui-table-header">
                   <tr>
-                    <th className="px-4 py-3">Agent</th>
-                    <th className="px-4 py-3">Declared Scopes</th>
-                    <th className="px-4 py-3">Token TTL</th>
+                    <th scope="col" className="px-4 py-3">Agent</th>
+                    <th scope="col" className="px-4 py-3">Declared Scopes</th>
+                    <th scope="col" className="ui-numeric px-4 py-3">Token TTL</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -72,7 +72,7 @@ export default async function PoliciesPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted">
+                      <td className="ui-numeric px-4 py-3 text-muted">
                         {agent.effectiveTtlSeconds}s
                         {agent.explicitTtlSeconds ? <span className="ml-2 text-xs text-muted">explicit</span> : <span className="ml-2 text-xs text-muted">default</span>}
                       </td>

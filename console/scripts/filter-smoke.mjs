@@ -180,6 +180,10 @@ try {
     const { verifyControls } = await import("./controls-smoke.mjs");
     await verifyControls(browser, base);
   }
+  if (process.argv.includes("--data")) {
+    const { verifyData } = await import("./data-smoke.mjs");
+    await verifyData(browser, base, audit);
+  }
   assert.deepEqual(errors, []);
   console.log("PASS: no browser runtime errors");
 } finally {

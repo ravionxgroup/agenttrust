@@ -32,18 +32,18 @@ export function AgentsTable({ agents }: { agents: AgentSummary[] }) {
         </label>
       </div>
 
-      <div className="ui-card overflow-x-auto">
-        <table className="w-full min-w-[920px] text-left text-sm">
+      <div className="ui-card ui-table-scroll" role="region" aria-label="Observed agents" tabIndex={0}>
+        <table className="ui-table min-w-[920px]">
           <thead className="ui-table-header">
             <tr>
-              <th className="px-4 py-3">Agent</th>
-              <th className="px-4 py-3">Runs Observed</th>
-              <th className="px-4 py-3">Tool Calls</th>
-              <th className="px-4 py-3">Allowed</th>
-              <th className="px-4 py-3">Denied</th>
-              <th className="px-4 py-3">Execution Errors</th>
-              <th className="px-4 py-3">Tools Used</th>
-              <th className="px-4 py-3">Last Seen</th>
+              <th scope="col" className="px-4 py-3">Agent</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Runs Observed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Tool Calls</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Allowed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Denied</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Execution Errors</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Tools Used</th>
+              <th scope="col" className="px-4 py-3">Last Seen</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -54,12 +54,12 @@ export function AgentsTable({ agents }: { agents: AgentSummary[] }) {
                     {agent.agentId}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-muted">{agent.runsObserved}</td>
-                <td className="px-4 py-3 text-muted">{agent.toolCalls}</td>
-                <td className="px-4 py-3 text-success">{agent.allowedCalls}</td>
-                <td className="px-4 py-3 text-denied">{agent.deniedCalls}</td>
-                <td className="px-4 py-3 text-failed">{agent.executionErrors}</td>
-                <td className="px-4 py-3 text-muted">{agent.distinctTools}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{agent.runsObserved}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{agent.toolCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-success">{agent.allowedCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-denied">{agent.deniedCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-failed">{agent.executionErrors}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{agent.distinctTools}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(agent.lastSeen)}</td>
               </tr>
             ))}

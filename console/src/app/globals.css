@@ -91,12 +91,70 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(a, button, input, select, summary, [tabindex]) {
+  :where(a, button, input, select, summary, [tabindex]), .ui-table tr {
     transition: none !important;
   }
 }
 
 @layer components {
+  .ui-table-scroll {
+    @apply min-w-0 max-w-full overflow-x-auto;
+  }
+
+  .ui-table-scroll:focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+  }
+
+  .ui-table {
+    @apply w-full border-collapse text-left text-[13px] leading-5;
+  }
+
+  .ui-invocation-table {
+    table-layout: fixed;
+  }
+
+  .ui-table th, .ui-table td {
+    @apply px-4 py-3 align-top;
+  }
+
+  .ui-table th {
+    @apply text-left text-xs font-medium;
+  }
+
+  .ui-table tbody tr {
+    @apply border-t border-line hover:bg-hover focus-within:bg-hover;
+  }
+
+  .ui-table .ui-numeric {
+    @apply text-right tabular-nums;
+  }
+
+  .ui-table-id {
+    @apply font-mono text-xs;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-tech-id.ui-id-wrap {
+    @apply whitespace-normal overflow-visible text-clip;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-timeline-head {
+    @apply grid min-w-0 gap-3;
+  }
+
+  @screen md {
+    .ui-timeline-head {
+      grid-template-columns: minmax(0, 1fr) 104px 136px;
+      @apply items-start;
+    }
+  }
+
+  .ui-scope-more {
+    @apply shrink-0 rounded-md border border-control-border bg-control px-2 py-1 text-xs font-medium text-accent hover:bg-hover;
+  }
+
   .ui-page-header {
     @apply mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5;
   }
@@ -198,7 +256,8 @@ button:disabled {
   }
 
   .ui-clickable-id {
-    @apply rounded border border-transparent bg-raised px-1.5 py-0.5 text-accent motion-safe:transition-colors hover:bg-hover;
+    overflow-wrap: anywhere;
+    @apply font-mono rounded border border-transparent bg-raised px-1.5 py-0.5 text-accent motion-safe:transition-colors hover:bg-hover;
   }
 
   .ui-row-selected {

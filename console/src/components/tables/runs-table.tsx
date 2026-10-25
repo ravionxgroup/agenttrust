@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import type { RunSummary } from "../../lib/domain";
-import { formatObservedWindow, formatTimestamp, truncateId } from "../../lib/format";
+import { formatObservedWindow, formatTimestamp } from "../../lib/format";
 import { TechId } from "../badges/tech-id";
 
 export function RunsTable({ runs }: { runs: RunSummary[] }) {
@@ -32,19 +32,19 @@ export function RunsTable({ runs }: { runs: RunSummary[] }) {
         </label>
       </div>
 
-      <div className="ui-card overflow-x-auto">
-        <table className="w-full min-w-[980px] text-left text-sm">
+      <div className="ui-card ui-table-scroll" role="region" aria-label="Observed runs" tabIndex={0}>
+        <table className="ui-table min-w-[980px]">
           <thead className="ui-table-header">
             <tr>
-              <th className="px-4 py-3">Run</th>
-              <th className="px-4 py-3">Agent</th>
-              <th className="px-4 py-3">First Observed</th>
-              <th className="px-4 py-3">Last Observed</th>
-              <th className="px-4 py-3">Observed Window</th>
-              <th className="px-4 py-3">Tool Calls</th>
-              <th className="px-4 py-3">Allowed</th>
-              <th className="px-4 py-3">Denied</th>
-              <th className="px-4 py-3">Execution Errors</th>
+              <th scope="col" className="px-4 py-3">Run</th>
+              <th scope="col" className="px-4 py-3">Agent</th>
+              <th scope="col" className="px-4 py-3">First Observed</th>
+              <th scope="col" className="px-4 py-3">Last Observed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Observed Window</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Tool Calls</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Allowed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Denied</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Execution Errors</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -52,7 +52,7 @@ export function RunsTable({ runs }: { runs: RunSummary[] }) {
               <tr key={run.runId} className="transition hover:bg-hover">
                 <td className="max-w-52 px-4 py-3">
                   <Link href={`/runs/${encodeURIComponent(run.runId)}`} className="ui-clickable-id block truncate">
-                    {truncateId(run.runId, 18)}
+                    {run.runId}
                   </Link>
                 </td>
                 <td className="max-w-48 px-4 py-3 font-medium">
@@ -62,11 +62,11 @@ export function RunsTable({ runs }: { runs: RunSummary[] }) {
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(run.firstObservedAt)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(run.lastObservedAt)}</td>
-                <td className="px-4 py-3 text-muted">{formatObservedWindow(run.observedWindowSeconds)}</td>
-                <td className="px-4 py-3 text-muted">{run.toolCalls}</td>
-                <td className="px-4 py-3 text-success">{run.allowedCalls}</td>
-                <td className="px-4 py-3 text-denied">{run.deniedCalls}</td>
-                <td className="px-4 py-3 text-failed">{run.executionErrors}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{formatObservedWindow(run.observedWindowSeconds)}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{run.toolCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-success">{run.allowedCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-denied">{run.deniedCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-failed">{run.executionErrors}</td>
               </tr>
             ))}
           </tbody>

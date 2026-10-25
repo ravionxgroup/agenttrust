@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, CircleSlash, Clock, ListChecks, TerminalSquare } from "lucide-react";
 import { getConsoleDataProvider } from "../../../lib/providers";
-import { formatObservedWindow, formatTimestamp, truncateId } from "../../../lib/format";
+import { formatObservedWindow, formatTimestamp } from "../../../lib/format";
 import { SourceIndicator } from "../../../components/metrics/source-indicator";
 import { SectionCard } from "../../../components/layout/section-card";
 import { TechId } from "../../../components/badges/tech-id";
@@ -20,7 +20,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
   if (!run) {
     return (
       <div className="px-6 py-6 lg:px-8">
-        <div className="ui-page-header">
+        <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
           <div>
             <h2 className="ui-page-title">Run Not Observed</h2>
             <p className="ui-muted mt-1">No audited tool activity was found for this run ID.</p>
@@ -28,7 +28,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
           <SourceIndicator source={source} />
         </div>
         <SectionCard className="p-8">
-          <TechId className="text-foreground">{decodedRunId}</TechId>
+          <TechId wrap className="text-foreground">{decodedRunId}</TechId>
           <p className="ui-muted mt-3">Runs are reconstructed from audit events, not explicit lifecycle records.</p>
           <Link href="/runs" className="ui-button ui-button-secondary mt-5">
             Back to runs
@@ -40,10 +40,10 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
 
   return (
     <div className="px-6 py-6 lg:px-8">
-      <div className="ui-page-header">
+      <div className="ui-page-header [&>div]:min-w-0 [&>div]:max-w-full">
         <div>
           <h2 className="ui-page-title">Run</h2>
-          <div className="mt-2"><TechId className="text-base text-accent">{run.runId}</TechId></div>
+          <div className="mt-2"><TechId wrap className="text-base text-accent">{run.runId}</TechId></div>
           <p className="ui-muted mt-2">
             Agent{" "}
             <Link href={`/agents/${encodeURIComponent(run.agentId)}`} className="ui-clickable-id text-foreground">
@@ -77,7 +77,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
             <div>
               <dt className="ui-field-label">Token ID</dt>
               {run.tokenId ? (
-                <dd className="mt-1"><TechId>{truncateId(run.tokenId, 18)}</TechId></dd>
+                <dd className="mt-1"><TechId wrap>{run.tokenId}</TechId></dd>
               ) : (
                 <dd className="mt-1 text-sm text-failed">{source.kind === "gateway" ? "Token IDs omitted from the audit view" : "Multiple token IDs observed"}</dd>
               )}

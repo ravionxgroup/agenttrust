@@ -14,7 +14,7 @@ export function ExecutionTimeline({ events }: { events: AuditEvent[] }) {
   }
 
   return (
-    <div className="ui-card p-5">
+    <div className="ui-card min-w-0 p-4 sm:p-5">
       <ol className="space-y-5">
         {events.map((event, index) => {
           const denied = event.decision === "deny";
@@ -31,25 +31,23 @@ export function ExecutionTimeline({ events }: { events: AuditEvent[] }) {
                 aria-hidden="true"
               />
               {!isLast ? <div className="absolute bottom-[-1.25rem] left-1.5 top-5 w-px bg-line" aria-hidden="true" /> : null}
-              <div className="rounded-lg border border-line bg-raised p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="text-xs uppercase tracking-wider text-muted">{formatFullTimestamp(event.ts)}</div>
+              <div className="min-w-0 rounded-lg border border-line bg-raised p-4">
+                <div className="ui-timeline-head">
+                  <div className="min-w-0">
+                    <div className="text-xs leading-5 text-muted tabular-nums">{formatFullTimestamp(event.ts)}</div>
                     <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
-                      <TechId className="text-sm text-foreground">{event.tool}</TechId>
+                      <TechId wrap className="text-sm text-foreground">{event.tool}</TechId>
                       <span className="text-muted">/</span>
-                      <TechId className="text-accent">{event.requiredScope}</TechId>
+                      <TechId wrap className="text-accent">{event.requiredScope}</TechId>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <DecisionBadge decision={event.decision} />
-                    <ResultBadge decision={event.decision} resultStatus={event.resultStatus} />
-                  </div>
+                  <div className="ui-timeline-authorization"><div className="ui-field-label mb-1">Authorization</div><DecisionBadge decision={event.decision} /></div>
+                  <div className="ui-timeline-execution"><div className="ui-field-label mb-1">Execution</div><ResultBadge decision={event.decision} resultStatus={event.resultStatus} /></div>
                 </div>
 
                 {denied ? (
                   <div className="mt-4 rounded-md border border-denied/20 bg-denied/10 px-3 py-2">
-                    <div className="text-sm font-medium text-denied">{event.reason ?? "Authorization denied"}</div>
+                    <div className="break-words text-sm font-medium text-denied">{event.reason ?? "Authorization denied"}</div>
                     <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-denied">Tool not executed</div>
                   </div>
                 ) : errored ? (

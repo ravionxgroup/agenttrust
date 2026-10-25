@@ -34,19 +34,19 @@ export function ToolsTable({ tools }: { tools: ToolSummary[] }) {
         </label>
       </div>
 
-      <div className="ui-card overflow-x-auto">
-        <table className="w-full min-w-[1040px] text-left text-sm">
+      <div className="ui-card ui-table-scroll" role="region" aria-label="Observed tools" tabIndex={0}>
+        <table className="ui-table min-w-[1040px]">
           <thead className="ui-table-header">
             <tr>
-              <th className="px-4 py-3">Tool</th>
-              <th className="px-4 py-3">Required Scope</th>
-              <th className="px-4 py-3">Agents Observed</th>
-              <th className="px-4 py-3">Runs Observed</th>
-              <th className="px-4 py-3">Tool Calls</th>
-              <th className="px-4 py-3">Allowed</th>
-              <th className="px-4 py-3">Denied</th>
-              <th className="px-4 py-3">Execution Errors</th>
-              <th className="px-4 py-3">Last Seen</th>
+              <th scope="col" className="px-4 py-3">Tool</th>
+              <th scope="col" className="px-4 py-3">Required Scope</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Agents Observed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Runs Observed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Tool Calls</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Allowed</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Denied</th>
+              <th scope="col" className="ui-numeric px-4 py-3">Execution Errors</th>
+              <th scope="col" className="px-4 py-3">Last Seen</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -60,12 +60,12 @@ export function ToolsTable({ tools }: { tools: ToolSummary[] }) {
                 <td className="max-w-64 px-4 py-3">
                   <ScopeSummary tool={tool} />
                 </td>
-                <td className="px-4 py-3 text-muted">{tool.agentsObserved}</td>
-                <td className="px-4 py-3 text-muted">{tool.runsObserved}</td>
-                <td className="px-4 py-3 text-muted">{tool.calls}</td>
-                <td className="px-4 py-3 text-success">{tool.allowedCalls}</td>
-                <td className="px-4 py-3 text-denied">{tool.deniedCalls}</td>
-                <td className="px-4 py-3 text-failed">{tool.executionErrors}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{tool.agentsObserved}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{tool.runsObserved}</td>
+                <td className="ui-numeric px-4 py-3 text-muted">{tool.calls}</td>
+                <td className="ui-numeric px-4 py-3 text-success">{tool.allowedCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-denied">{tool.deniedCalls}</td>
+                <td className="ui-numeric px-4 py-3 text-failed">{tool.executionErrors}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(tool.lastSeen)}</td>
               </tr>
             ))}
@@ -89,9 +89,9 @@ function ScopeSummary({ tool }: { tool: ToolSummary }) {
     <div className="flex min-w-0 items-center gap-2">
       <TechId className="text-accent">{first.requiredScope}</TechId>
       {rest.length > 0 ? (
-        <span className="shrink-0 rounded bg-raised px-2 py-1 text-xs font-medium text-muted">
+        <Link href={`/tools/${encodeURIComponent(tool.tool)}`} className="ui-scope-more" aria-label={`View all ${tool.requiredScopes.length} observed scopes for ${tool.tool}`}>
           +{rest.length}
-        </span>
+        </Link>
       ) : null}
     </div>
   );

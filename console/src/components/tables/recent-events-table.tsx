@@ -1,29 +1,29 @@
 import Link from "next/link";
 import type { AuditEvent } from "../../lib/domain";
-import { formatTimestamp, truncateId } from "../../lib/format";
+import { formatTimestamp } from "../../lib/format";
 import { DecisionBadge } from "../badges/decision-badge";
 import { ResultBadge } from "../badges/result-badge";
 import { TechId } from "../badges/tech-id";
 
 export function RecentEventsTable({ events }: { events: AuditEvent[] }) {
   return (
-    <div className="ui-card overflow-hidden">
-      <table className="w-full min-w-[760px] text-left text-sm">
+    <div className="ui-card ui-table-scroll" role="region" aria-label="Recent authorization activity" tabIndex={0}>
+      <table className="ui-table min-w-[760px]">
         <thead className="ui-table-header">
           <tr>
-            <th className="px-4 py-3 font-medium">Timestamp</th>
-            <th className="px-4 py-3 font-medium">Agent</th>
-            <th className="px-4 py-3 font-medium">Tool</th>
-            <th className="px-4 py-3 font-medium">Required Scope</th>
-            <th className="px-4 py-3 font-medium">Decision</th>
-            <th className="px-4 py-3 font-medium">Result / Reason</th>
+            <th scope="col" className="px-4 py-3 font-medium">Timestamp</th>
+            <th scope="col" className="px-4 py-3 font-medium">Agent</th>
+            <th scope="col" className="px-4 py-3 font-medium">Tool</th>
+            <th scope="col" className="px-4 py-3 font-medium">Required Scope</th>
+            <th scope="col" className="px-4 py-3 font-medium">Decision</th>
+            <th scope="col" className="px-4 py-3 font-medium">Result / Reason</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
           {events.map((event) => (
             <tr key={event.eventId} className="hover:bg-hover">
               <td className="whitespace-nowrap px-4 py-3 text-muted">{formatTimestamp(event.ts)}</td>
-              <td className="max-w-44 px-4 py-3 font-medium text-foreground"><span className="block truncate">{event.agentId}</span></td>
+              <td className="max-w-44 px-4 py-3 font-medium text-foreground"><span className="block truncate font-mono text-xs">{event.agentId}</span></td>
               <td className="max-w-44 px-4 py-3">
                 <Link href={`/tools/${encodeURIComponent(event.tool)}`} className="ui-clickable-id block truncate text-foreground" title={event.tool}>
                   {event.tool}
@@ -39,7 +39,7 @@ export function RecentEventsTable({ events }: { events: AuditEvent[] }) {
                 )}
                 <div className="mt-1">
                   <Link href={`/runs/${encodeURIComponent(event.runId)}`} className="ui-clickable-id inline-block max-w-44 truncate text-[11px] text-muted" title={event.runId}>
-                    {truncateId(event.runId, 18)}
+                    {event.runId}
                   </Link>
                 </div>
               </td>

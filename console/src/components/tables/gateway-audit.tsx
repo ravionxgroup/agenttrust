@@ -53,15 +53,16 @@ export function GatewayOverview({ snapshot, source }: { snapshot: GatewaySnapsho
   </div>;
 }
 export function InvocationTable({ invocations, emptyTitle = "No observed invocations" }: { invocations: Invocation[]; emptyTitle?: string }) {
-  return <div className="ui-card overflow-x-auto"><table className="w-full min-w-[1050px] text-left text-sm"><thead className="ui-table-header"><tr>
-    {["Invocation", "Time (UTC)", "Agent", "Tool", "Authorization", "Execution", "Evidence", "Classification"].map(label => <th key={label} className="px-4 py-3 font-medium">{label}</th>)}
+  return <div className="ui-card ui-table-scroll" role="region" aria-label="Gateway invocations" tabIndex={0}><table className="ui-table ui-invocation-table min-w-[1440px]">
+    <colgroup>{[280, 220, 180, 180, 128, 144, 200, 180].map((width, index) => <col key={index} style={{ width }} />)}</colgroup><thead className="ui-table-header"><tr>
+    {["Invocation", "Time (UTC)", "Agent", "Tool", "Authorization", "Execution", "Evidence", "Classification"].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}
   </tr></thead><tbody className="divide-y divide-line">{invocations.map(invocation => <tr key={invocation.invocationId} className="hover:bg-hover">
-    <td className="px-4 py-3"><Link href={`/invocations/${invocation.invocationId}`} className="font-mono text-xs text-accent">{invocation.invocationId}</Link></td>
-    <td className="whitespace-nowrap px-4 py-3 text-muted">{invocation.timestamp}</td>
-    <td className="max-w-40 break-words px-4 py-3">{invocation.agentId || "Not established"}</td><td className="max-w-40 break-words px-4 py-3">{invocation.tool || "Unavailable"}</td>
+    <td className="px-4 py-3"><Link href={`/invocations/${invocation.invocationId}`} className="ui-table-id text-accent hover:underline">{invocation.invocationId}</Link></td>
+    <td className="ui-table-id px-4 py-3 text-muted">{invocation.timestamp}</td>
+    <td className="ui-table-id px-4 py-3"><span className="block truncate" title={invocation.agentId || undefined}>{invocation.agentId || "Not established"}</span></td><td className="ui-table-id px-4 py-3"><span className="block truncate" title={invocation.tool || undefined}>{invocation.tool || "Unavailable"}</span></td>
     <td className="px-4 py-3"><EvidenceBadge value={invocation.authorization} />{invocation.authorizationMissing && <span className="mt-1 block text-xs text-muted">Evidence missing</span>}</td>
     <td className="px-4 py-3"><EvidenceBadge value={invocation.execution} />{invocation.executionMissing && <span className="mt-1 block text-xs text-muted">Execution evidence missing</span>}</td>
-    <td className="px-4 py-3"><Integrity invocation={invocation} /></td><td className="px-4 py-3 font-mono text-xs text-muted">{invocation.reason}</td>
+    <td className="px-4 py-3"><Integrity invocation={invocation} /></td><td className="ui-table-id px-4 py-3 text-muted">{invocation.reason}</td>
   </tr>)}</tbody></table>{invocations.length === 0 && <StateMessage icon={SearchX} title={emptyTitle}><p>No observed invocations match this view. An empty readable file is not execution evidence.</p></StateMessage>}</div>;
 }
 export function GatewayExplorer({ snapshot, source, params }: { snapshot: GatewaySnapshot; source: DataSourceInfo; params: SearchParams }) {
@@ -95,4 +96,4 @@ export function InvocationDetail({ invocation, page = 1 }: { invocation: Invocat
     <nav aria-label="Timeline pages" className="mt-4 flex flex-wrap gap-3 text-sm text-accent [&>a]:ui-button [&>a]:ui-button-secondary">{page > 1 && <Link href={`?page=${page - 1}`}>Previous events</Link>}{page * 100 < invocation.events.length && <Link href={`?page=${page + 1}`}>Next events</Link>}</nav>
   </div>;
 }
-function Field({ label, value }: { label: string; value: string }) { return <div><dt className="ui-field-label">{label}</dt><dd className="mt-1 break-all text-foreground">{value}</dd></div>; }
+function Field({ label, value }: { label: string; value: string }) { return <div><dt className="ui-field-label">{label}</dt><dd className="ui-table-id mt-1 text-foreground">{value}</dd></div>; }
